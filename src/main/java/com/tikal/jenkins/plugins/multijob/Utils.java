@@ -2,6 +2,9 @@ package com.tikal.jenkins.plugins.multijob;
 
 import com.tikal.jenkins.plugins.multijob.views.TableProperty;
 import hudson.model.User;
+import hudson.plugins.groovy.FileScriptSource;
+import hudson.plugins.groovy.ScriptSource;
+import hudson.plugins.groovy.StringScriptSource;
 import jenkins.model.Jenkins;
 
 import javax.annotation.Nonnull;
@@ -36,5 +39,12 @@ public final class Utils {
             user.addProperty(property);
         }
         return property;
+    }
+
+    public static ScriptSource getScriptSource(boolean isUseFile, String scriptText, String scriptPath) {
+        if (isUseFile) {
+            return new FileScriptSource(scriptPath);
+        }
+        return new StringScriptSource(scriptText);
     }
 }

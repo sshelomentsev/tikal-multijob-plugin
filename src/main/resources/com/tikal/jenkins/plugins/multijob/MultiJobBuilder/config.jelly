@@ -140,6 +140,9 @@
                   <f:textarea />
               </f:entry>
           </f:advanced>
+          <f:entry title="Classpath" field="classpath">
+              <f:expandableTextbox />
+          </f:entry>
       </f:optionalBlock>
 
       <f:entry title="Continuation condition to next phase &lt;br&gt; when jobs' statuses are:"

@@ -1,6 +1,5 @@
 package com.tikal.jenkins.plugins.multijob;
 
-import com.cisco.jenkins.plugins.script.ScriptRunner;
 import com.tikal.jenkins.plugins.multijob.MultiJobBuild.SubBuild;
 import com.tikal.jenkins.plugins.multijob.PhaseJobsConfig.KillPhaseOnJobResultCondition;
 import com.tikal.jenkins.plugins.multijob.counters.CounterHelper;
@@ -26,6 +25,9 @@ import hudson.model.Queue.QueueAction;
 import hudson.model.Result;
 import hudson.model.TaskListener;
 import hudson.model.queue.QueueTaskFuture;
+import hudson.plugins.groovy.ScriptSource;
+import hudson.plugins.groovy.SystemScriptRunner;
+import hudson.plugins.groovy.exceptions.GroovyScriptExecutionException;
 import hudson.scm.ChangeLogSet;
 import hudson.scm.ChangeLogSet.Entry;
 import hudson.tasks.BuildStepDescriptor;
@@ -83,6 +85,7 @@ public class MultiJobBuilder extends Builder implements DependecyDeclarer {
     private String scriptPath;
     private String scriptText;
     private String bindings;
+    private String classpath;
     private ExecutionType executionType = ExecutionType.PARALLEL;
 
     final static Pattern PATTERN = Pattern.compile("(\\$\\{.+?\\})", Pattern.CASE_INSENSITIVE);
@@ -110,7 +113,7 @@ public class MultiJobBuilder extends Builder implements DependecyDeclarer {
     @DataBoundConstructor
     public MultiJobBuilder(String phaseName, List<PhaseJobsConfig> phaseJobs,
             ContinuationCondition continuationCondition, boolean enableGroovyScript, ScriptLocation scriptLocation,
-                           String bindings,
+                           String bindings, String classpath,
                            ExecutionType executionType) {
         this.phaseName = phaseName;
         this.phaseJobs = Util.fixNull(phaseJobs);
@@ -119,11 +122,8 @@ public class MultiJobBuilder extends Builder implements DependecyDeclarer {
         this.scriptText = Util.fixNull(scriptLocation.getScriptText());
         this.isUseScriptFile = scriptLocation.isUseFile();
         this.scriptPath = Util.fixNull(scriptLocation.getScriptPath());
-        if (null == bindings || bindings.trim().isEmpty()) {
-            this.bindings = "";
-        } else {
-            this.bindings = bindings;
-        }
+        this.bindings = Util.fixNull(bindings);
+        this.classpath = Util.fixNull(classpath);
         if (null == executionType) {
             this.executionType = ExecutionType.PARALLEL;
         } else {
@@ -217,14 +217,13 @@ public class MultiJobBuilder extends Builder implements DependecyDeclarer {
         }
 
         if (enableGroovyScript) {
-            ScriptRunner runner = new ScriptRunner(build, listener);
-            Map<Object, Object> binding = new HashMap<Object, Object>();
-            binding.putAll(Utils.parseProperties(bindings));
-            runner.bindVariablesMap(binding);
-            if (isUseScriptFile && null != scriptPath) {
-                runner.evaluateFromWorkspace(scriptPath);
-            } else if (null != scriptText) {
-                runner.evaluate(scriptText);
+            ScriptSource source = Utils.getScriptSource(isUseScriptFile, scriptText, scriptPath);
+            try {
+                SystemScriptRunner<Void> runner = new SystemScriptRunner<Void>(source, build, listener, bindings,
+                                                                               classpath);
+                runner.evaluate();
+            } catch (GroovyScriptExecutionException e) {
+                listener.getLogger().println("Failed to execute groovy script within a phase");
             }
         }
 
@@ -308,14 +307,15 @@ public class MultiJobBuilder extends Builder implements DependecyDeclarer {
 
             if (phaseConfig.getEnableJobScript()) {
                 boolean jobScriptEvalRes = true;
-                ScriptRunner runner = new ScriptRunner(build, listener);
-                Map<Object, Object> binding = new HashMap<Object, Object>();
-                binding.putAll(Utils.parseProperties(phaseConfig.getJobBindings()));
-                runner.bindVariablesMap(binding);
-                if (phaseConfig.isUseScriptFile() && null != phaseConfig.getScriptPath()) {
-                    jobScriptEvalRes = runner.evaluateFromWorkspace(phaseConfig.getScriptPath());
-                } else if (null != phaseConfig.getJobScript()) {
-                    jobScriptEvalRes = runner.evaluate(phaseConfig.getJobScript());
+                ScriptSource source = Utils.getScriptSource(phaseConfig.isUseScriptFile(), phaseConfig.getJobScript(),
+                                                            phaseConfig.getScriptPath());
+                try {
+                    SystemScriptRunner<Boolean> runner = new SystemScriptRunner<Boolean>(source, build, listener,
+                                                                                         phaseConfig.getJobBindings(), "");
+                    jobScriptEvalRes = runner.evaluate();
+                } catch (GroovyScriptExecutionException e) {
+                    listener.getLogger().println(String.format("Failed to execute groovy script before %s job " +
+                            "execution.", subJob.getName()));
                 }
                 if (!jobScriptEvalRes) {
                     listener.getLogger().println(String.format("Skipping %s. Script is evaluate to false.", subJob
@@ -330,16 +330,18 @@ public class MultiJobBuilder extends Builder implements DependecyDeclarer {
                 continue;
             }
 
-            boolean isStart;
+            boolean isStart = true;
             if (phaseConfig.getResumeCondition().isEvaluate()) {
-                ScriptRunner runner = new ScriptRunner(build, listener);
-                Map<Object, Object> binding = new HashMap<Object, Object>();
-                binding.putAll(Utils.parseProperties(phaseConfig.getResumeBindings()));
-                runner.bindVariablesMap(binding);
-                if (phaseConfig.isUseResumeScriptFile()) {
-                    isStart = runner.evaluateFromWorkspace(phaseConfig.getResumeScriptPath());
-                } else {
-                    isStart = runner.evaluate(phaseConfig.getResumeScriptText());
+                ScriptSource source = Utils.getScriptSource(phaseConfig.isUseResumeScriptFile(), phaseConfig
+                        .getResumeScriptText(), phaseConfig.getResumeScriptPath());
+                try {
+                    SystemScriptRunner<Boolean> runner = new SystemScriptRunner<Boolean>(source, build, listener,
+                                                                                         phaseConfig.getResumeBindings(),
+                                                                                         "");
+                    isStart = runner.evaluate();
+                } catch (GroovyScriptExecutionException e) {
+                    listener.getLogger().println(String.format("Failed to execute groovy script in case of resume %s " +
+                                                                       "job ", subJob.getName()));
                 }
             } else {
                 isStart = phaseConfig.getResumeCondition().isStart();
@@ -1168,6 +1170,14 @@ public class MultiJobBuilder extends Builder implements DependecyDeclarer {
 
     public void setBindings(String bindings) {
         this.bindings = bindings;
+    }
+
+    public String getClasspath() {
+        return classpath;
+    }
+
+    public void setClasspath(String classpath) {
+        this.classpath = classpath;
     }
 
     public enum ExecutionType {
