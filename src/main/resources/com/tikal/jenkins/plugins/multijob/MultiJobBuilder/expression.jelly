@@ -5,6 +5,9 @@
         <f:entry title="Script file source" field="scriptPath">
             <f:textbox value="${instance.getResumeScriptPath()}" />
         </f:entry>
+        <f:entry title="Script is located on the slave node" field="isScriptOnSlave">
+            <f:checkbox name="isScriptOnSlave" checked="${instance.isResumeScriptOnSlaveNode()}" default="false" />
+        </f:entry>
     </f:radioBlock>
     <f:radioBlock name="resumeScriptLocation" value="false" title="Use the provided script"
                   checked="${instance.isUseResumeScriptFile()==false}">
@@ -16,6 +19,10 @@
         <f:entry title="Variable bindings" help="/plugin/jenkins-multijob-plugin/help-variableBindings.html"
                  field="resumeBindings">
             <f:textarea value="${instance.getResumeBindings()}"/>
+        </f:entry>
+        <f:entry title="Run script on node that is running a build" field="isRunJobScriptOnSlave"
+                 help="/plugin/jenkins-multijob-plugin/help-runOnSlave.html">
+            <f:checkbox name="isRunJobScriptOnSlave" checked="${instance.isRunJobScriptOnSlave()}" default="false" />
         </f:entry>
     </f:advanced>
 

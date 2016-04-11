@@ -69,6 +69,10 @@ public class PhaseJobsConfig implements Describable<PhaseJobsConfig> {
 	private String resumeScriptPath;
 	private String resumeScriptText;
 	private JSONObject resumeConditions;
+	private boolean isJobScriptOnSlaveNode;
+	private boolean isResumeScriptOnSlaveNode;
+	private boolean isRunJobScriptOnSlave;
+	private boolean isRunResumeScriptOnSlave;
 
 	public boolean isBuildOnlyIfSCMChanges() {
 		return this.buildOnlyIfSCMChanges;
@@ -263,6 +267,38 @@ public class PhaseJobsConfig implements Describable<PhaseJobsConfig> {
 		this.resumeConditions = resumeConditions;
 	}
 
+	public boolean isJobScriptOnSlaveNode() {
+		return isJobScriptOnSlaveNode;
+	}
+
+	public void setJobScriptOnSlaveNode(boolean isJobScriptOnSlaveNode) {
+		this.isJobScriptOnSlaveNode = isJobScriptOnSlaveNode;
+	}
+
+	public boolean isResumeScriptOnSlaveNode() {
+		return isResumeScriptOnSlaveNode;
+	}
+
+	public void setResumeScriptOnSlaveNode(boolean isResumeScriptOnSlaveNode) {
+		this.isResumeScriptOnSlaveNode = isResumeScriptOnSlaveNode;
+	}
+
+	public boolean isRunJobScriptOnSlave() {
+		return isRunJobScriptOnSlave;
+	}
+
+	public void setRunJobScriptOnSlave(boolean isRunJobScriptOnSlave) {
+		this.isRunJobScriptOnSlave = isRunJobScriptOnSlave;
+	}
+
+	public boolean isRunResumeScriptOnSlave() {
+		return isRunResumeScriptOnSlave;
+	}
+
+	public void setRunResumeScriptOnSlave(boolean isRunResumeScriptOnSlave) {
+		this.isRunResumeScriptOnSlave = isRunResumeScriptOnSlave;
+	}
+
 	public Descriptor<PhaseJobsConfig> getDescriptor() {
 		return Hudson.getInstance().getDescriptorOrDie(getClass());
 	}
@@ -282,7 +318,9 @@ public class PhaseJobsConfig implements Describable<PhaseJobsConfig> {
 			String jobBindings, String resumeBindings,
 			JSONObject resumeConditions,
 			ResumeCondition resumeCondition, String resumeScriptPath, String resumeScriptText,
-			boolean isUseResumeScriptFile) {
+			boolean isUseResumeScriptFile,
+			boolean isJobScriptOnSlaveNode, boolean isResumeScriptOnSlaveNode,
+			boolean isRunResumeScriptOnSlave, boolean isRunJobScriptOnSlave) {
 		this.jobName = jobName;
 		this.jobProperties = jobProperties;
 		this.currParams = currParams;
@@ -304,10 +342,12 @@ public class PhaseJobsConfig implements Describable<PhaseJobsConfig> {
 			this.jobScript = scriptLocation.getScriptText();
 			this.scriptPath = scriptLocation.getScriptPath();
 			this.isUseScriptFile = scriptLocation.isUseFile();
+			this.isJobScriptOnSlaveNode = scriptLocation.isScriptOnSlave();
 		} else {
 			this.jobScript = "";
 			this.scriptPath = "";
 			this.isUseScriptFile = false;
+			this.isJobScriptOnSlaveNode = false;
 		}
 		this.jobBindings = Util.fixNull(jobBindings);
 
@@ -330,6 +370,8 @@ public class PhaseJobsConfig implements Describable<PhaseJobsConfig> {
 			this.isUseResumeScriptFile = isUseResumeScriptFile;
 			this.resumeBindings = Util.fixNull(resumeBindings);
 		}
+		this.isRunResumeScriptOnSlave = isRunResumeScriptOnSlave;
+		this.isRunJobScriptOnSlave = isRunJobScriptOnSlave;
 	}
 
 	public List<AbstractBuildParameters> getConfigs() {

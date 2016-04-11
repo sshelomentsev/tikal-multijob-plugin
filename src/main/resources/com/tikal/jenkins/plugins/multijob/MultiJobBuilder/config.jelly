@@ -80,6 +80,9 @@
                         <f:entry title="Script file source" field="scriptPath">
                             <f:textbox value="${instance.getScriptPath()}" />
                         </f:entry>
+                        <f:entry title="Script is located on the slave node" field="isScriptOnSlave">
+                            <f:checkbox name="isScriptOnSlave" checked="${instance.isJobScriptOnSlaveNode()}" default="false" />
+                        </f:entry>
                     </f:radioBlock>
                     <f:radioBlock name="scriptLocation" value="false" title="Use the provided script"
                                   checked="${instance.isUseScriptFile()==false}">
@@ -91,6 +94,11 @@
                         <f:entry title="Variable bindings" help="/plugin/jenkins-multijob-plugin/help-variableBindings.html"
                                  field="jobBindings">
                             <f:textarea />
+                        </f:entry>
+                        <f:entry title="Run script on node that is running a build" field="isRunResumeScriptOnSlave"
+                                 help="/plugin/jenkins-multijob-plugin/help-runOnSlave.html">
+                            <f:checkbox name="isRunResumeScriptOnSlave"
+                                        checked="${instance.isRunResumeScriptOnSlave()}" default="false" />
                         </f:entry>
                     </f:advanced>
                 </f:optionalBlock>
@@ -126,6 +134,9 @@
               <f:entry title="Script file source" field="scriptPath">
                   <f:textbox value="${instance.getScriptPath()}" />
               </f:entry>
+              <f:entry title="Script is located on the slave node" field="isScriptOnSlave">
+                  <f:checkbox name="isScriptOnSlave" checked="${instance.isScriptOnSlave()}" default="false" />
+              </f:entry>
           </f:radioBlock>
           <f:radioBlock name="scriptLocation" value="false" title="Use the provided script"
                         checked="${instance.isUseScriptFile()==false}">
@@ -138,6 +149,10 @@
               <f:entry title="Variable bindings" help="/plugin/jenkins-multijob-plugin/help-variableBindings.html"
                        field="bindings">
                   <f:textarea />
+              </f:entry>
+              <f:entry title="Run script on node that is running a build" field="isRunOnSlave"
+                       help="/plugin/jenkins-multijob-plugin/help-runOnSlave.html">
+                  <f:checkbox name="isRunOnSlave" checked="${instance.isRunOnSlave()}" default="false" />
               </f:entry>
           </f:advanced>
       </f:optionalBlock>
