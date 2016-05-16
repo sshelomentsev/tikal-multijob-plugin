@@ -9,7 +9,7 @@
 		<version>2.1.0</version> <relativePath>../pom.xml</relativePath> </parent -->
 
 	<artifactId>jenkins-multijob-plugin</artifactId>
-	<version>1.39</version>
+	<version>1.40</version>
 	<name>Jenkins Multijob plugin</name>
 	<description>Enabling full hierarchy of Jenkins jobs</description>
 	<url>http://wiki.jenkins-ci.org/display/JENKINS/Multijob+Plugin</url>
@@ -53,7 +53,7 @@
 		<connection>scm:git:git://github.com:xored/tikal-multijob-plugin.git</connection>
 		<developerConnection>scm:git:git@github.com:xored/tikal-multijob-plugin.git</developerConnection>
 		<url>https://github.com/xored/tikal-multijob-plugin.git</url>
-		<tag>jenkins-multijob-plugin-1.39</tag>
+		<tag>jenkins-multijob-plugin-1.40</tag>
 	</scm>
 
 
@@ -117,6 +117,13 @@
 			<groupId>com.cisco.jenkins.plugins</groupId>
 			<artifactId>groovy-script-plugin</artifactId>
 			<version>1.56.0</version>
+		</dependency>
+
+		<dependency>
+			<groupId>com.sonyericsson.hudson.plugins.rebuild</groupId>
+			<artifactId>rebuild</artifactId>
+			<version>1.25</version>
+			<optional>true</optional>
 		</dependency>
 
 	</dependencies>
