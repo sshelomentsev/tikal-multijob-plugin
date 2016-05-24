@@ -1,5 +1,6 @@
 package com.tikal.jenkins.plugins.multijob;
 
+import hudson.XmlFile;
 import hudson.model.AbstractBuild;
 import hudson.model.AbstractProject;
 import hudson.model.Action;
@@ -21,11 +22,13 @@ import org.kohsuke.stapler.export.ExportedBean;
 import javax.servlet.ServletException;
 import java.io.File;
 import java.io.IOException;
+import java.nio.file.Files;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.CopyOnWriteArrayList;
+import java.util.logging.Logger;
 
 @ExportedBean(defaultVisibility = 999)
 public class MultiJobBuild extends Build<MultiJobProject, MultiJobBuild> {
@@ -33,6 +36,8 @@ public class MultiJobBuild extends Build<MultiJobProject, MultiJobBuild> {
     private List<SubBuild> subBuilds;
     private MultiJobChangeLogSet changeSets = new MultiJobChangeLogSet(this);
     private Map<String, SubBuild> subBuildsMap = new HashMap<String, SubBuild>();
+
+    private static final Logger LOGGER = Logger.getLogger(MultiJobBuild.class.getName());
 
     public MultiJobBuild(MultiJobProject project) throws IOException {
         super(project);
@@ -108,7 +113,40 @@ public class MultiJobBuild extends Build<MultiJobProject, MultiJobBuild> {
         }
     }
 
+    private void updateLastMetrics(SubBuild subBuild) {
+        Long successTimestamp = null;
+        Long failureTimestamp = null;
+        if (null != getPreviousBuild()) {
+            for (SubBuild sub : getPreviousBuild().getSubBuilds()) {
+                boolean is = false;
+                if (sub.getJobName().equals(subBuild.getJobName())) {
+                    if (null != sub.getPhaseName() && null != subBuild.getPhaseName()) {
+                        is = sub.getPhaseName().equals(subBuild.getPhaseName());
+                    } else {
+                        is = true;
+                    }
+                }
+                if (is) {
+                    successTimestamp = sub.getSuccessTimestamp();
+                    failureTimestamp = sub.getFailureTimestamp();
+                }
+            }
+        }
+        Result result = subBuild.getResult();
+        if (null != result) {
+            if (Result.SUCCESS.equals(result)) {
+                successTimestamp = subBuild.getBuild().getTimeInMillis();
+            }
+            if (Result.FAILURE.equals(result)) {
+                failureTimestamp = subBuild.getBuild().getTimeInMillis();
+            }
+        }
+        subBuild.setSuccessTimestamp(successTimestamp);
+        subBuild.setFailureTimestamp(failureTimestamp);
+    }
+
     public void addSubBuild(SubBuild subBuild) {
+        updateLastMetrics(subBuild);
         String key = subBuild.getPhaseName().concat(subBuild.getJobName())
                 .concat(String.valueOf(subBuild.getBuildNumber()));
         if (subBuildsMap.containsKey(key)) {
@@ -118,6 +156,18 @@ public class MultiJobBuild extends Build<MultiJobProject, MultiJobBuild> {
             getSubBuilds().add(subBuild);
         }
         subBuildsMap.put(key, subBuild);
+
+        if (project.isSurviveRestart() && isBuilding()) {
+            String path = project.getConfigFile().getFile().getParent() + "/com.tikal.jenkins.plugins.multijob" +
+                    ".resume" + String.valueOf(getNumber()) + ".xml";
+            XmlFile resumeConfigFile = new XmlFile(new File(path));
+            try {
+                resumeConfigFile.write(this);
+            } catch (IOException e) {
+                LOGGER.severe("Failed to save build state to resume config for " + getProject().getDisplayName() +
+                                      " #" + getNumber());
+            }
+        }
     }
 
     @Exported
@@ -131,7 +181,30 @@ public class MultiJobBuild extends Build<MultiJobProject, MultiJobBuild> {
             Build<MultiJobProject, MultiJobBuild>.BuildExecution {
         @Override
         public Result run(BuildListener listener) throws Exception {
-            Result result = super.run(listener);
+            super.run(listener);
+            String path = getProject().getRootDir().getAbsolutePath() + "/com.tikal.jenkins.plugins.multijob.resume" +
+                    String.valueOf(getNumber()) + ".xml";
+            File configFile = new File(path);
+            if (configFile.exists()) {
+                try {
+                    Files.delete(configFile.toPath());
+                } catch (IOException e) {
+                    listener.getLogger().println("[MultiJobPlugin] Failed to delete resume build config");
+                }
+            }
+            if (project.isSurviveRestart()) {
+                Jenkins j = Jenkins.getInstance();
+                if (null == j || j.isTerminating()) {
+                    String restartPath = getProject().getRootDir().getAbsolutePath() + "/com.tikal.jenkins.plugins" +
+                            ".multijob.restart" + String.valueOf(getNumber()) + ".xml";
+                    File restartFile = new File(restartPath);
+                    restartFile.createNewFile();
+                }
+            }
+            return computeResult();
+        }
+
+        private Result computeResult() {
             MultiJobResumeBuild action = new MultiJobResumeBuild(super.getBuild());
             if (isAborted()) {
                 super.getBuild().addAction(action);
@@ -141,9 +214,10 @@ public class MultiJobBuild extends Build<MultiJobProject, MultiJobBuild> {
                 super.getBuild().addAction(action);
                 return Result.FAILURE;
             }
-            if (isUnstable())
+            if (isUnstable()) {
                 return Result.UNSTABLE;
-            return result;
+            }
+            return Result.SUCCESS;
         }
 
         private boolean isAborted() {
@@ -188,6 +262,9 @@ public class MultiJobBuild extends Build<MultiJobProject, MultiJobBuild> {
         private final boolean aborted;
         private final AbstractBuild<?, ?> build;
 
+        private Long successTimestamp = null;
+        private Long failureTimestamp = null;
+
         public SubBuild(String parentJobName, int parentBuildNumber,
                 String jobName, int buildNumber, String phaseName,
                 Result result, String icon, String duration, String url,
@@ -221,7 +298,23 @@ public class MultiJobBuild extends Build<MultiJobProject, MultiJobBuild> {
             this.url = url;
             this.retry = retry;
             this.aborted = aborted;
-			this.build = build;
+            this.build = build;
+        }
+
+        public Long getSuccessTimestamp() {
+            return successTimestamp;
+        }
+
+        public void setSuccessTimestamp(Long successTimestamp) {
+            this.successTimestamp = successTimestamp;
+        }
+
+        public Long getFailureTimestamp() {
+            return failureTimestamp;
+        }
+
+        public void setFailureTimestamp(Long failureTimestamp) {
+            this.failureTimestamp = failureTimestamp;
         }
 
         @Exported

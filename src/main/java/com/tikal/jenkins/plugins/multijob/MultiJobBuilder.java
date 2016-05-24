@@ -15,12 +15,14 @@ import hudson.Extension;
 import hudson.FilePath;
 import hudson.Launcher;
 import hudson.Util;
+import hudson.XmlFile;
 import hudson.console.HyperlinkNote;
 import hudson.model.AbstractBuild;
 import hudson.model.AbstractProject;
 import hudson.model.Action;
 import hudson.model.BallColor;
 import hudson.model.BuildListener;
+import hudson.model.Cause;
 import hudson.model.CauseAction;
 import hudson.model.Computer;
 import hudson.model.DependecyDeclarer;
@@ -228,11 +230,18 @@ public class MultiJobBuilder extends Builder implements DependecyDeclarer {
     @Override
     @SuppressWarnings({ "rawtypes", "unchecked" })
     public boolean perform(final AbstractBuild<?, ? > build, final Launcher launcher, final BuildListener listener) throws InterruptedException, IOException {
+        MultiJobBuild multiJobBuild = (MultiJobBuild) build;
+        MultiJobProject thisProject = multiJobBuild.getProject();
+
         if (null == executionType) {
             executionType = ExecutionType.PARALLEL;
         }
 
-        boolean isMasterNode = Computer.currentComputer().getNode().getDescriptor() instanceof Jenkins.DescriptorImpl;
+        Computer computer = Computer.currentComputer();
+        boolean isMasterNode = true;
+        if (null != computer) {
+            isMasterNode = computer.getNode().getDescriptor() instanceof Jenkins.DescriptorImpl;
+        }
 
         if (enableGroovyScript) {
             if (isRunOnSlave && !isMasterNode) {
@@ -263,7 +272,17 @@ public class MultiJobBuilder extends Builder implements DependecyDeclarer {
         }
 
         if (Utils.rebuildPluginAvailable()) {
-            RebuildCause rebuildCause = build.getCause(RebuildCause.class);
+            RebuildCause rebuildCause = null;
+            int buildNumber = 0;
+            for (Cause cause : build.getCauses()) {
+                if (cause instanceof RebuildCause) {
+                    RebuildCause r = (RebuildCause) cause;
+                    if (r.getUpstreamBuild() > buildNumber) {
+                        rebuildCause = r;
+                        buildNumber = r.getUpstreamBuild();
+                    }
+                }
+            }
             if (rebuildCause != null) {
                 MultiJobBuild prevBuild = (MultiJobBuild) rebuildCause.getUpstreamRun();
                 WasResumedAction wasResumedAction = prevBuild.getAction(WasResumedAction.class);
@@ -288,7 +307,8 @@ public class MultiJobBuilder extends Builder implements DependecyDeclarer {
                     AbstractProject childProject = (AbstractProject) item;
                     AbstractBuild childBuild = childProject.getBuildByNumber(subBuild.getBuildNumber());
                     if (null != childBuild) {
-                        if (childBuild.getResult().equals(Result.FAILURE)) {
+                        if (childBuild.getResult().equals(Result.FAILURE)
+                                || childBuild.getResult().equals(Result.ABORTED)) {
                             resume = true;
                             failedBuildMap.put(childProject.getUrl(), subBuild);
                         } else {
@@ -303,8 +323,6 @@ public class MultiJobBuilder extends Builder implements DependecyDeclarer {
         }
 
         Jenkins jenkins = Jenkins.getInstance();
-        MultiJobBuild multiJobBuild = (MultiJobBuild) build;
-        MultiJobProject thisProject = multiJobBuild.getProject();
         Map<PhaseSubJob, PhaseJobsConfig> phaseSubJobs = new LinkedHashMap<PhaseSubJob, PhaseJobsConfig>();
         final CounterManager phaseCounters = new CounterManager();
 
@@ -579,7 +597,7 @@ public class MultiJobBuilder extends Builder implements DependecyDeclarer {
             this.queue = queue;
         }
 
-        public Boolean call() {
+        public Boolean call() throws IOException {
             Result result = null;
             AbstractBuild jobBuild = null;
             try {
@@ -890,8 +908,9 @@ public class MultiJobBuilder extends Builder implements DependecyDeclarer {
 
     private void abortSubBuild(MultiJobBuild multiJobBuild, MultiJobProject multiJobProject, AbstractBuild<?, ?> jobBuild) {
         SubBuild subBuild = new SubBuild(multiJobProject.getName(),
-                multiJobBuild.getNumber(), jobBuild.getProject().getName(),
-                jobBuild.getNumber(), phaseName, Result.ABORTED, BallColor.ABORTED.getImage(), "", jobBuild.getUrl(), false, true, jobBuild);
+                                         multiJobBuild.getNumber(), jobBuild.getProject().getName(),
+                                         jobBuild.getNumber(), phaseName, Result.ABORTED, BallColor.ABORTED.getImage
+                (), "", jobBuild.getUrl(), false, true, jobBuild);
         multiJobBuild.addSubBuild(subBuild);
     }
 
