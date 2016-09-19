@@ -120,6 +120,11 @@
         </f:repeatable>
       </f:entry>
 
+      <f:entry title="Ignore phase result" field="isIgnorePhaseResult">
+        <f:checkbox name="isIgnorePhaseResult" checked="${instance.isIgnorePhaseResult()}" default="false" />
+      </f:entry>
+
+
       <f:entry title="Job execution type" field="executionType" help="/plugin/jenkins-multijob-plugin/help-executionType.html">
         <f:enum field="executionType">
             ${it.getLabel()}

@@ -5,6 +5,7 @@ import com.cisco.jenkins.plugins.script.ScriptRunner;
 import com.cisco.jenkins.plugins.script.config.ConfigFactory;
 import com.cisco.jenkins.plugins.script.config.ScriptConfig;
 import com.sonyericsson.rebuild.RebuildCause;
+import com.sun.org.apache.regexp.internal.RE;
 import com.tikal.jenkins.plugins.multijob.MultiJobBuild.SubBuild;
 import com.tikal.jenkins.plugins.multijob.PhaseJobsConfig.KillPhaseOnJobResultCondition;
 import com.tikal.jenkins.plugins.multijob.counters.CounterHelper;
@@ -96,6 +97,7 @@ public class MultiJobBuilder extends Builder implements DependecyDeclarer {
     private boolean isScriptOnSlave;
     private String bindings;
     private boolean isRunOnSlave;
+    private boolean isIgnorePhaseResult;
     private ExecutionType executionType = ExecutionType.PARALLEL;
 
     final static Pattern PATTERN = Pattern.compile("(\\$\\{.+?\\})", Pattern.CASE_INSENSITIVE);
@@ -124,7 +126,7 @@ public class MultiJobBuilder extends Builder implements DependecyDeclarer {
     public MultiJobBuilder(String phaseName, List<PhaseJobsConfig> phaseJobs,
             ContinuationCondition continuationCondition, boolean enableGroovyScript, ScriptLocation scriptLocation,
                            String bindings, boolean isRunOnSlave,
-                           ExecutionType executionType) {
+                           ExecutionType executionType, boolean isIgnorePhaseResult) {
         this.phaseName = phaseName;
         this.phaseJobs = Util.fixNull(phaseJobs);
         this.continuationCondition = continuationCondition;
@@ -147,6 +149,7 @@ public class MultiJobBuilder extends Builder implements DependecyDeclarer {
             this.executionType = executionType;
         }
         this.isRunOnSlave = isRunOnSlave;
+        this.isIgnorePhaseResult = isIgnorePhaseResult;
     }
 
     public String expandToken(String toExpand, final AbstractBuild<?,?> build, final BuildListener listener) {
@@ -498,9 +501,8 @@ public class MultiJobBuilder extends Builder implements DependecyDeclarer {
 
             if (jobStatus == StatusJob.IS_DISABLED_AT_PHASECONFIG) {
                 phaseCounters.processSkipped();
-                continue;
             } else {
-                boolean shouldTrigger = null == successBuildMap.get(subJob.getUrl()) ? true : false;
+                boolean shouldTrigger = (null == successBuildMap.get(subJob.getUrl()));
                 subTasks.add(new SubTask(subJob, phaseConfig, actions, multiJobBuild, shouldTrigger));
             }
         }
@@ -576,6 +578,9 @@ public class MultiJobBuilder extends Builder implements DependecyDeclarer {
     }
 
     private boolean isContinue(Set<Result> jobResults) {
+        if (isIgnorePhaseResult)
+            return true;
+
         for (Result result : jobResults) {
             if (!continuationCondition.isContinue(result)) {
                 return false;
@@ -623,7 +628,7 @@ public class MultiJobBuilder extends Builder implements DependecyDeclarer {
                     QueueTaskFuture<AbstractBuild> future = (QueueTaskFuture<AbstractBuild>) subTask.future;
                     MultiJobListener.fireOnStart(future.waitForStart(), subTask.multiJobBuild);
                     while (true) {
-                        if (subTask.isCancelled()) {
+                        if (subTask.isCancelled() && !isIgnorePhaseResult) {
                             if (jobBuild != null) {
                                 Executor exect = jobBuild.getExecutor();
                                 if (exect != null) {
@@ -640,6 +645,8 @@ public class MultiJobBuilder extends Builder implements DependecyDeclarer {
 
                         try {
                             jobBuild = future.getStartCondition().get(5, TimeUnit.SECONDS);
+                            if (isIgnorePhaseResult)
+                                jobBuild.setResult(Result.SUCCESS);
                         } catch (Exception e) {
                             if (e instanceof TimeoutException)
                                 continue;
@@ -683,7 +690,7 @@ public class MultiJobBuilder extends Builder implements DependecyDeclarer {
                             finish = true;
                         }
 
-                        ChangeLogSet<Entry> changeLogSet = jobBuild.getChangeSet();
+                                                ChangeLogSet<Entry> changeLogSet = jobBuild.getChangeSet();
                         subTask.multiJobBuild.addChangeLogSet(changeLogSet);
                         addBuildEnvironmentVariables(subTask.multiJobBuild, jobBuild, listener);
                         subTask.result = result;
@@ -831,6 +838,10 @@ public class MultiJobBuilder extends Builder implements DependecyDeclarer {
 
 
     protected boolean checkPhaseTermination(SubTask subTask, List<SubTask> subTasks, final BuildListener listener) {
+        if (isIgnorePhaseResult)
+            return false;
+
+
         try {
             KillPhaseOnJobResultCondition killCondition = subTask.phaseConfig.getKillPhaseOnJobResultCondition();
             if (killCondition.equals(KillPhaseOnJobResultCondition.NEVER) && subTask.result != Result.ABORTED) {
@@ -948,6 +959,7 @@ public class MultiJobBuilder extends Builder implements DependecyDeclarer {
                 .toUpperCase();
         String buildNumber = Integer.toString(jobBuild.getNumber());
         String buildResult = jobBuild.getResult().toString();
+
         String buildName = jobBuild.getDisplayName().toString();
 
         // If the job is run a second time, store the first job's number and result with unique keys
@@ -1343,6 +1355,14 @@ public class MultiJobBuilder extends Builder implements DependecyDeclarer {
         }
 
         abstract public boolean isParallel();
+    }
+
+    public boolean isIgnorePhaseResult() {
+        return isIgnorePhaseResult;
+    }
+
+    public void setIgnorePhaseResult(boolean isIgnorePhaseResult) {
+        this.isIgnorePhaseResult = isIgnorePhaseResult;
     }
 
     public void setExecutionType(ExecutionType executionType) {

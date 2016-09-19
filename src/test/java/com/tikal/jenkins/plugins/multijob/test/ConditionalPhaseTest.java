@@ -56,7 +56,7 @@ public class ConditionalPhaseTest {
         configTopList.add(firstPhase);
         MultiJobBuilder firstPhaseBuilder = new MultiJobBuilder("FirstPhase", configTopList, ContinuationCondition
                 .SUCCESSFUL,false, new ScriptLocation(null, null, null, null, null), "", false, MultiJobBuilder
-                .ExecutionType.PARALLEL);
+                .ExecutionType.PARALLEL, false);
 
 
         // create 'SecondPhase' containing job 'free2'
@@ -68,7 +68,7 @@ public class ConditionalPhaseTest {
         configTopList.add(secondPhase);
         MultiJobBuilder secondPhaseBuilder = new MultiJobBuilder("SecondPhase", configTopList2, ContinuationCondition
                 .SUCCESSFUL, false, new ScriptLocation(null, null, null, null, null), "", false, MultiJobBuilder
-                .ExecutionType.PARALLEL);
+                .ExecutionType.PARALLEL, false);
 
 
         multi.getBuildersList().add(firstPhaseBuilder);
