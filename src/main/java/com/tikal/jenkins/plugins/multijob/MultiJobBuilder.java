@@ -551,19 +551,7 @@ public class MultiJobBuilder extends Builder implements DependecyDeclarer {
                 if (subTask != null) {
                     resultCounter++;
                     if (subTask.result != null) {
-
-
                         Result result = subTask.result;
-                        /*PhaseJobsConfig.IgnoreJobResultType ignoreJobResultType = subTask.getIgnoreJobResultType();
-                        System.out.println("!!!!!!!!!!!");
-                        System.out.println(result.toString());
-                        System.out.println(ignoreJobResultType.getMinSuccessResult().toString());
-                        if (ignoreJobResultType.getMinSuccessResult().isWorseOrEqualTo(subTask.result)) {
-                            result = Result.SUCCESS;
-                            System.out.println("INSIDE! BECOME SUCCESS!");
-                        }
-                        System.out.println("!!!!!!!!!!!!!!");*/
-
                         jobResults.add(result);
                         phaseCounters.process(result);
                         checkPhaseTermination(subTask, subTasks, listener);
