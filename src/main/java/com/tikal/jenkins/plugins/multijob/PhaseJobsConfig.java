@@ -73,12 +73,12 @@ public class PhaseJobsConfig implements Describable<PhaseJobsConfig> {
 	private boolean isResumeScriptOnSlaveNode;
 	private boolean isRunJobScriptOnSlave;
 	private boolean isRunResumeScriptOnSlave;
-	private IgnoreJobResultType ignoreJobResultType;
+	private IgnoreJobResult ignoreJobResult;
 
-	public IgnoreJobResultType getIgnoreJobResultType() { return ignoreJobResultType; }
+	public IgnoreJobResult getIgnoreJobResult() { return ignoreJobResult; }
 
-	public void setIgnoreJobResultType(IgnoreJobResultType ignoreJobResultType) {
-		this.ignoreJobResultType = ignoreJobResultType;
+	public void setIgnoreJobResult(IgnoreJobResult ignoreJobResult) {
+		this.ignoreJobResult = ignoreJobResult;
 	}
 
 	public boolean isBuildOnlyIfSCMChanges() {
@@ -328,7 +328,7 @@ public class PhaseJobsConfig implements Describable<PhaseJobsConfig> {
 			boolean isUseResumeScriptFile,
 			boolean isJobScriptOnSlaveNode, boolean isResumeScriptOnSlaveNode,
 			boolean isRunResumeScriptOnSlave, boolean isRunJobScriptOnSlave,
-						   IgnoreJobResultType ignoreJobResultType) {
+						   IgnoreJobResult ignoreJobResult) {
 		this.jobName = jobName;
 		this.jobProperties = jobProperties;
 		this.currParams = currParams;
@@ -380,7 +380,7 @@ public class PhaseJobsConfig implements Describable<PhaseJobsConfig> {
 		}
 		this.isRunResumeScriptOnSlave = isRunResumeScriptOnSlave;
 		this.isRunJobScriptOnSlave = isRunJobScriptOnSlave;
-		this.ignoreJobResultType = ignoreJobResultType;
+		this.ignoreJobResult = ignoreJobResult;
 	}
 
 	public List<AbstractBuildParameters> getConfigs() {
@@ -708,7 +708,7 @@ public class PhaseJobsConfig implements Describable<PhaseJobsConfig> {
 		}
 	}
 
-	public enum IgnoreJobResultType {
+	public enum IgnoreJobResult {
 		NEVER("Never") {
 			@Override
 			public Result getMinSuccessResult() { return Result.SUCCESS; }
@@ -724,7 +724,7 @@ public class PhaseJobsConfig implements Describable<PhaseJobsConfig> {
 
 		abstract public Result getMinSuccessResult();
 
-		private IgnoreJobResultType(String label) {
+		private IgnoreJobResult(String label) {
 			this.label = label;
 		}
 

@@ -97,7 +97,7 @@ public class MultiJobBuilder extends Builder implements DependecyDeclarer {
     private boolean isScriptOnSlave;
     private String bindings;
     private boolean isRunOnSlave;
-    private IgnorePhaseResultType ignorePhaseResultType = IgnorePhaseResultType.NEVER;
+    private IgnorePhaseResult ignorePhaseResult = IgnorePhaseResult.NEVER;
     private ExecutionType executionType = ExecutionType.PARALLEL;
 
     final static Pattern PATTERN = Pattern.compile("(\\$\\{.+?\\})", Pattern.CASE_INSENSITIVE);
@@ -126,7 +126,7 @@ public class MultiJobBuilder extends Builder implements DependecyDeclarer {
     public MultiJobBuilder(String phaseName, List<PhaseJobsConfig> phaseJobs,
             ContinuationCondition continuationCondition, boolean enableGroovyScript, ScriptLocation scriptLocation,
                            String bindings, boolean isRunOnSlave,
-                           ExecutionType executionType, IgnorePhaseResultType ignorePhaseResultType) {
+                           ExecutionType executionType, IgnorePhaseResult ignorePhaseResult) {
         this.phaseName = phaseName;
         this.phaseJobs = Util.fixNull(phaseJobs);
         this.continuationCondition = continuationCondition;
@@ -149,7 +149,7 @@ public class MultiJobBuilder extends Builder implements DependecyDeclarer {
             this.executionType = executionType;
         }
         this.isRunOnSlave = isRunOnSlave;
-        this.ignorePhaseResultType = ignorePhaseResultType;
+        this.ignorePhaseResult = ignorePhaseResult;
     }
 
     public String expandToken(String toExpand, final AbstractBuild<?,?> build, final BuildListener listener) {
@@ -585,7 +585,7 @@ public class MultiJobBuilder extends Builder implements DependecyDeclarer {
     private boolean isContinue(Set<Result> jobResults) {
         for (Result result : jobResults) {
             if (!continuationCondition.isContinue(result)
-                    && !ignorePhaseResultType.isContinue(result)) {
+                    && !ignorePhaseResult.isContinue(result)) {
                 return false;
             }
         }
@@ -666,7 +666,7 @@ public class MultiJobBuilder extends Builder implements DependecyDeclarer {
                         boolean isComplete = MultiJobListener.fireOnComplete(jobBuild, subTask.multiJobBuild);
                         result = jobBuild.getResult();
 
-                        if (subTask.phaseConfig.getIgnoreJobResultType().getMinSuccessResult().isWorseOrEqualTo(result)) {
+                        if (subTask.phaseConfig.getIgnoreJobResult().getMinSuccessResult().isWorseOrEqualTo(result)) {
                             result = Result.SUCCESS;
                         }
 
@@ -847,11 +847,11 @@ public class MultiJobBuilder extends Builder implements DependecyDeclarer {
     protected boolean checkPhaseTermination(SubTask subTask, List<SubTask> subTasks, final BuildListener listener) {
         try {
             KillPhaseOnJobResultCondition killCondition = subTask.phaseConfig.getKillPhaseOnJobResultCondition();
-            PhaseJobsConfig.IgnoreJobResultType ignoreJobResultType = subTask.phaseConfig.getIgnoreJobResultType();
+            PhaseJobsConfig.IgnoreJobResult ignoreJobResult = subTask.phaseConfig.getIgnoreJobResult();
             if (killCondition.equals(KillPhaseOnJobResultCondition.NEVER) && subTask.result != Result.ABORTED) {
                 return false;
             }
-            if (ignoreJobResultType.getMinSuccessResult().isWorseOrEqualTo(subTask.result)) {
+            if (ignoreJobResult.getMinSuccessResult().isWorseOrEqualTo(subTask.result)) {
                 return false;
             }
             if (killCondition.isKillPhase(subTask.result)) {
@@ -894,7 +894,7 @@ public class MultiJobBuilder extends Builder implements DependecyDeclarer {
             MultiJobProject multiJobProject, PhaseJobsConfig phaseConfig) {
         SubBuild subBuild = new SubBuild(multiJobProject.getName(),
                 multiJobBuild.getNumber(), phaseConfig.getJobName(), 0,
-                phaseName, null, BallColor.NOTBUILT.getImage(), "not built", "", null, ignorePhaseResultType.getMinSuccessResult());
+                phaseName, null, BallColor.NOTBUILT.getImage(), "not built", "", null, ignorePhaseResult.getMinSuccessResult());
         multiJobBuild.addSubBuild(subBuild);
     }
 
@@ -904,7 +904,7 @@ public class MultiJobBuilder extends Builder implements DependecyDeclarer {
                 multiJobBuild.getNumber(), jobBuild.getProject().getName(),
                 jobBuild.getNumber(), phaseName, null, jobBuild.getIconColor()
                         .getImage(), jobBuild.getDurationString(),
-                jobBuild.getUrl(), jobBuild, ignorePhaseResultType.getMinSuccessResult());
+                jobBuild.getUrl(), jobBuild, ignorePhaseResult.getMinSuccessResult());
         multiJobBuild.addSubBuild(subBuild);
     }
 
@@ -914,7 +914,7 @@ public class MultiJobBuilder extends Builder implements DependecyDeclarer {
         SubBuild subBuild = new SubBuild(multiJobProject.getName(),
                 multiJobBuild.getNumber(), jobBuild.getProject().getName(),
                 jobBuild.getNumber(), phaseName, result, jobBuild.getIconColor().getImage(),
-                jobBuild.getDurationString(), jobBuild.getUrl(), jobBuild, ignorePhaseResultType.getMinSuccessResult());
+                jobBuild.getDurationString(), jobBuild.getUrl(), jobBuild, ignorePhaseResult.getMinSuccessResult());
         multiJobBuild.addSubBuild(subBuild);
     }
 
@@ -924,7 +924,7 @@ public class MultiJobBuilder extends Builder implements DependecyDeclarer {
         SubBuild subBuild = new SubBuild(multiJobProject.getName(),
                 multiJobBuild.getNumber(), jobBuild.getProject().getName(),
                 jobBuild.getNumber(), phaseName, result, jobBuild.getIconColor().getImage(),
-                jobBuild.getDurationString(), jobBuild.getUrl(), retry, false, jobBuild, ignorePhaseResultType.getMinSuccessResult());
+                jobBuild.getDurationString(), jobBuild.getUrl(), retry, false, jobBuild, ignorePhaseResult.getMinSuccessResult());
         multiJobBuild.addSubBuild(subBuild);
     }
 
@@ -932,7 +932,7 @@ public class MultiJobBuilder extends Builder implements DependecyDeclarer {
         SubBuild subBuild = new SubBuild(multiJobProject.getName(),
                                          multiJobBuild.getNumber(), jobBuild.getProject().getName(),
                                          jobBuild.getNumber(), phaseName, Result.ABORTED, BallColor.ABORTED.getImage
-                (), "", jobBuild.getUrl(), false, true, jobBuild, ignorePhaseResultType.getMinSuccessResult());
+                (), "", jobBuild.getUrl(), false, true, jobBuild, ignorePhaseResult.getMinSuccessResult());
         multiJobBuild.addSubBuild(subBuild);
     }
 
@@ -1364,7 +1364,7 @@ public class MultiJobBuilder extends Builder implements DependecyDeclarer {
         abstract public boolean isParallel();
     }
 
-    public enum IgnorePhaseResultType {
+    public enum IgnorePhaseResult {
         NEVER("Never") {
             @Override
             public boolean isContinue(Result result) {
@@ -1393,7 +1393,7 @@ public class MultiJobBuilder extends Builder implements DependecyDeclarer {
         abstract public boolean isContinue(Result result);
         abstract public Result getMinSuccessResult();
 
-        private IgnorePhaseResultType(String label) {
+        private IgnorePhaseResult(String label) {
             this.label = label;
         }
 
@@ -1412,8 +1412,8 @@ public class MultiJobBuilder extends Builder implements DependecyDeclarer {
         return executionType;
     }
 
-    public IgnorePhaseResultType getIgnorePhaseResultType() { return ignorePhaseResultType; }
+    public IgnorePhaseResult getIgnorePhaseResult() { return ignorePhaseResult; }
 
-    public void setIgnorePhaseResultType(IgnorePhaseResultType ignorePhaseResultType) { this.ignorePhaseResultType = ignorePhaseResultType; }
+    public void setIgnorePhaseResult(IgnorePhaseResult ignorePhaseResult) { this.ignorePhaseResult = ignorePhaseResult; }
 
 }

@@ -18,8 +18,8 @@
                     </f:enum>
                 </f:entry>
 
-                <f:entry title="Ignore job result:" field="ignoreJobResultType" help="/plugin/jenkins-multijob-plugin/help-ignoreJobResultType.html">
-                    <f:enum field="ignoreJobResultType">
+                <f:entry title="Ignore job result:" field="ignoreJobResult" help="/plugin/jenkins-multijob-plugin/help-ignoreJobResult.html">
+                    <f:enum field="ignoreJobResult">
                         ${it.getLabel()}
                     </f:enum>
                 </f:entry>
@@ -127,8 +127,8 @@
         </f:repeatable>
       </f:entry>
 
-      <f:entry title="Ignore phase result" field="ignorePhaseResultType" help="/plugin/jenkins-multijob-plugin/help-ignorePhaseResultType.html">
-        <f:enum field="ignorePhaseResultType">
+      <f:entry title="Ignore phase result" field="ignorePhaseResult" help="/plugin/jenkins-multijob-plugin/help-ignorePhaseResult.html">
+        <f:enum field="ignorePhaseResult">
             ${it.getLabel()}
         </f:enum>
       </f:entry>
