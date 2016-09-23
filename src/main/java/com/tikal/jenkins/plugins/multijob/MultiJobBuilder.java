@@ -5,7 +5,6 @@ import com.cisco.jenkins.plugins.script.ScriptRunner;
 import com.cisco.jenkins.plugins.script.config.ConfigFactory;
 import com.cisco.jenkins.plugins.script.config.ScriptConfig;
 import com.sonyericsson.rebuild.RebuildCause;
-import com.sun.org.apache.regexp.internal.RE;
 import com.tikal.jenkins.plugins.multijob.MultiJobBuild.SubBuild;
 import com.tikal.jenkins.plugins.multijob.PhaseJobsConfig.KillPhaseOnJobResultCondition;
 import com.tikal.jenkins.plugins.multijob.counters.CounterHelper;
@@ -16,7 +15,6 @@ import hudson.Extension;
 import hudson.FilePath;
 import hudson.Launcher;
 import hudson.Util;
-import hudson.XmlFile;
 import hudson.console.HyperlinkNote;
 import hudson.model.AbstractBuild;
 import hudson.model.AbstractProject;
@@ -522,9 +520,6 @@ public class MultiJobBuilder extends Builder implements DependecyDeclarer {
                 CompletionService<Boolean> completion = new ExecutorCompletionService<Boolean>(executor);
                 Callable worker = new SubJobWorker(thisProject, listener, subTask, queue);
                 completion.submit(worker);
-
-
-
                 if (!executionType.isParallel()) {
                     Future<Boolean> future = completion.take();
                     try {
