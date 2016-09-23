@@ -538,8 +538,8 @@ public class MultiJobBuilder extends Builder implements DependecyDeclarer {
                 }
             } else {
                 AbstractBuild jobBuild = subTask.subJob.getBuildByNumber(subBuild.getBuildNumber());
-                updateSubBuild(multiJobBuild, thisProject, jobBuild, subBuild.getResult());
-
+                Result result = subBuild.getResult();
+                updateSubBuild(multiJobBuild, thisProject, jobBuild, result);
             }
         }
 
@@ -966,8 +966,8 @@ public class MultiJobBuilder extends Builder implements DependecyDeclarer {
                 .toUpperCase();
         String buildNumber = Integer.toString(jobBuild.getNumber());
         String buildResult = jobBuild.getResult().toString();
+        String buildName = jobBuild.getDisplayName();
 
-        String buildName = jobBuild.getDisplayName().toString();
 
         // If the job is run a second time, store the first job's number and result with unique keys
         if (variables.get("TRIGGERED_BUILD_RUN_COUNT_" + jobNameSafe) != null) {
