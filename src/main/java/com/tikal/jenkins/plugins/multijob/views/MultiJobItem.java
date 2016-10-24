@@ -50,7 +50,7 @@ public class MultiJobItem {
 			this.buildName = "#".concat(String.valueOf(buildNumber));
 			this.buildUrl = url.concat(String.valueOf(buildNumber));
 
-			this.result = build.getResult();
+			this.result = build.getResult() == null ? Result.NOT_BUILT : build.getResult();
 			this.statusIconColor = build.getIconColor().getImage();
 			this.lastDuration = build.getDurationString();
 		} else {
@@ -85,7 +85,11 @@ public class MultiJobItem {
             AbstractBuild<?, ?> build = (AbstractBuild<?, ?>) project.getBuildByNumber(buildNumber);
             this.buildName = "#".concat(String.valueOf(buildNumber));
             this.buildUrl = url.concat(String.valueOf(buildNumber));
-            this.result = minSuccessResult.isWorseOrEqualTo(build.getResult()) ? Result.SUCCESS : build.getResult();
+            Result buildResult = build.getResult();
+            if (null == buildResult) {
+                buildResult = Result.NOT_BUILT;
+            }
+            this.result = minSuccessResult.isWorseOrEqualTo(buildResult) ? Result.SUCCESS : buildResult;
             this.statusIconColor = build.getIconColor().getImage();
             this.lastDuration = build.getDurationString();
         } else {
