@@ -15,10 +15,11 @@
     <description>Enabling full hierarchy of Jenkins jobs</description>
     <url>http://wiki.jenkins-ci.org/display/JENKINS/Multijob+Plugin</url>
 
-	 <properties>
-		  <jenkins.version>2.32</jenkins.version>
+    <properties>
+         <jenkins.version>2.32</jenkins.version>
          <java.level>8</java.level>
-	 </properties>
+         <findbugs.failOnError>false</findbugs.failOnError>
+    </properties>
 
     <distributionManagement>
         <repository>
