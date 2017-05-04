@@ -31,7 +31,7 @@ public class ConditionalPhaseTest {
     @Rule
     public JenkinsRule j = new JenkinsRule();
 
-    //@Test
+    @Test
     public void testConditionalPhase() throws Exception {
         j.jenkins.getInjector().injectMembers(this);
 
