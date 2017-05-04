@@ -1,5 +1,4 @@
-<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
-         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/maven-v4_0_0.xsd">
+<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/maven-v4_0_0.xsd">
     <modelVersion>4.0.0</modelVersion>
     <parent>
         <groupId>org.jenkins-ci.plugins</groupId>
@@ -10,7 +9,7 @@
         <version>2.1.0</version> <relativePath>../pom.xml</relativePath> </parent -->
 
     <artifactId>jenkins-multijob-plugin</artifactId>
-    <version>1.85.0-SNAPSHOT</version>
+    <version>1.85.0</version>
     <name>Jenkins Multijob plugin</name>
     <description>Enabling full hierarchy of Jenkins jobs</description>
     <url>http://wiki.jenkins-ci.org/display/JENKINS/Multijob+Plugin</url>
@@ -60,7 +59,7 @@
         <connection>scm:git:git://github.com:xored/tikal-multijob-plugin.git</connection>
         <developerConnection>scm:git:git@github.com:xored/tikal-multijob-plugin.git</developerConnection>
         <url>https://github.com/xored/tikal-multijob-plugin.git</url>
-        <tag>v1</tag>
+        <tag>v1.85.0</tag>
     </scm>
 
 
@@ -173,7 +172,7 @@
                                         </goals>
                                     </pluginExecutionFilter>
                                     <action>
-                                        <ignore/>
+                                        <ignore />
                                     </action>
                                 </pluginExecution>
                                 <pluginExecution>
@@ -187,7 +186,7 @@
                                         </goals>
                                     </pluginExecutionFilter>
                                     <action>
-                                        <ignore/>
+                                        <ignore />
                                     </action>
                                 </pluginExecution>
                                 <pluginExecution>
@@ -200,7 +199,7 @@
                                         </goals>
                                     </pluginExecutionFilter>
                                     <action>
-                                        <ignore/>
+                                        <ignore />
                                     </action>
                                 </pluginExecution>
                                 <pluginExecution>
@@ -213,7 +212,7 @@
                                         </goals>
                                     </pluginExecutionFilter>
                                     <action>
-                                        <ignore/>
+                                        <ignore />
                                     </action>
                                 </pluginExecution>
                             </pluginExecutions>
@@ -252,9 +251,8 @@
                         <phase>package</phase>
                         <configuration>
                             <target>
-                                <property name="full-name"
-                                          value="${project.build.directory}/${project.build.finalName}"/>
-                                <copy file="${full-name}.hpi" tofile="${full-name}.jpi"/>
+                                <property name="full-name" value="${project.build.directory}/${project.build.finalName}" />
+                                <copy file="${full-name}.hpi" tofile="${full-name}.jpi" />
                             </target>
                         </configuration>
                         <goals>
