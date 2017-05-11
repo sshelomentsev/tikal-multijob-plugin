@@ -1190,13 +1190,6 @@ public class MultiJobBuilder extends Builder implements DependecyDeclarer {
             return !matches;
         }
 
-        protected Object readResolve() {
-            if (build != null) {
-                buildNumber = build.getNumber();
-            }
-            return this;
-        }
-
         public String getIconFileName() {
             return null;
         }
