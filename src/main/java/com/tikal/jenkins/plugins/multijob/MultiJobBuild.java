@@ -181,7 +181,7 @@ public class MultiJobBuild extends Build<MultiJobProject, MultiJobBuild> {
             Build<MultiJobProject, MultiJobBuild>.BuildExecution {
         @Override
         public Result run(BuildListener listener) throws Exception {
-            super.run(listener);
+            Result result = super.run(listener);
             String path = getProject().getRootDir().getAbsolutePath() + "/com.tikal.jenkins.plugins.multijob.resume" +
                     String.valueOf(getNumber()) + ".xml";
             File configFile = new File(path);
@@ -221,6 +221,10 @@ public class MultiJobBuild extends Build<MultiJobProject, MultiJobBuild> {
         }
 
         private boolean isAborted() {
+            return evaluateResult(Result.NOT_BUILT);
+        }
+
+        private boolean isNotBuilt() {
             return evaluateResult(Result.FAILURE);
         }
 

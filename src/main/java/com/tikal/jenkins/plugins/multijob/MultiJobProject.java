@@ -16,6 +16,8 @@ import hudson.scm.PollingResult;
 import hudson.util.AlternativeUiTextProvider;
 import jenkins.model.Jenkins;
 import net.sf.json.JSONObject;
+
+import org.apache.commons.lang.StringUtils;
 import org.kohsuke.stapler.StaplerRequest;
 import org.kohsuke.stapler.StaplerResponse;
 import org.kohsuke.stapler.bind.JavaScriptMethod;
@@ -30,6 +32,7 @@ public class MultiJobProject extends Project<MultiJobProject, MultiJobBuild>
 
     private volatile boolean pollSubjobs = false;
     private volatile boolean surviveRestart = false;
+    private volatile String resumeEnvVars = null;
 
     @SuppressWarnings("rawtypes")
     private MultiJobProject(ItemGroup parent, String name) {
@@ -159,6 +162,18 @@ public class MultiJobProject extends Project<MultiJobProject, MultiJobBuild>
         this.surviveRestart = surviveRestart;
     }
 
+    public String getResumeEnvVars() {
+        return resumeEnvVars;
+    }
+
+    public void setResumeEnvVars(String resumeEnvVars) {
+        this.resumeEnvVars = resumeEnvVars;
+    }
+
+    public boolean getCheckResumeEnvVars() {
+        return !StringUtils.isBlank(resumeEnvVars);
+    }
+
     @Override
     protected void submit(StaplerRequest req, StaplerResponse rsp) throws IOException, ServletException, FormException {
         super.submit(req, rsp);
@@ -168,8 +183,17 @@ public class MultiJobProject extends Project<MultiJobProject, MultiJobBuild>
             json = json.getJSONObject(k);
             k = "pollSubjobs";
             if (json.has(k)) {
-                setPollSubjobs(json.getBoolean(k));
+                setPollSubjobs(json.optBoolean(k));
             }
+            String resumeEnvVars = null;
+            k = "resumeEnvVars";
+            if (json.has(k)) {
+            	json = json.getJSONObject(k);
+                if (json.has(k)) {
+                	resumeEnvVars = json.getString(k);
+                }
+            }
+            setResumeEnvVars(resumeEnvVars);
             k = "surviveRestart";
             if (json.has(k)) {
                 setSurviveRestart(json.getBoolean(k));

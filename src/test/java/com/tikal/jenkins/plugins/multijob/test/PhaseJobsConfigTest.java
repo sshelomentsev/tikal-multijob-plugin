@@ -83,7 +83,7 @@ public class PhaseJobsConfigTest extends HudsonTestCase {
         MultiJobBuild mjb = createTriggeringBuild(null);
 
         PhaseJobsConfig pjc = new PhaseJobsConfig("dummy", "", true, null, KillPhaseOnJobResultCondition.NEVER,
-                false, false, "", 0, false, false, "", true, false, new ScriptLocation
+                false, false, "", 0, false, false, "", true, false, false, new ScriptLocation
                 (null, null, null, null, null), null, null, new JSONObject(),
                 PhaseJobsConfig.ResumeCondition.SKIP, null, null, false, false,
                 false, false, false, PhaseJobsConfig.IgnoreJobResult.NEVER);
@@ -99,7 +99,7 @@ public class PhaseJobsConfigTest extends HudsonTestCase {
         MultiJobBuild mjb = createTriggeringBuild(null);
 
         PhaseJobsConfig pjc = new PhaseJobsConfig("dummy", "", true, null, KillPhaseOnJobResultCondition.NEVER,
-                false, false, "", 0, false, false, "", false, false, new ScriptLocation
+                false, false, "", 0, false, false, "", false, false, false, new ScriptLocation
                 (null, null, null, null, null), null, null, new JSONObject(),
                 PhaseJobsConfig.ResumeCondition.SKIP, null, null, false, false,
                 false, false, false, PhaseJobsConfig.IgnoreJobResult.NEVER);
@@ -123,7 +123,7 @@ public class PhaseJobsConfigTest extends HudsonTestCase {
         MultiJobBuild mjb = createTriggeringBuild(createParametersAction(CURRENT_KEY_VALUES));
 
         PhaseJobsConfig pjc = new PhaseJobsConfig("dummy", "", true, null, KillPhaseOnJobResultCondition.NEVER,
-                false, false, "", 0, false, false, "", false, false, new ScriptLocation
+                false, false, "", 0, false, false, "", false, false, false, new ScriptLocation
                 (null, null, null, null, null), null, null, new JSONObject(),
                 PhaseJobsConfig.ResumeCondition.SKIP, null, null, false, false,
                 false, false, false, PhaseJobsConfig.IgnoreJobResult.NEVER);
@@ -150,7 +150,7 @@ public class PhaseJobsConfigTest extends HudsonTestCase {
         MultiJobBuild mjb = createTriggeringBuild(createParametersAction(OVERRIDES_KEY_VALUES));
 
         PhaseJobsConfig pjc = new PhaseJobsConfig("dummy", "", true, null, KillPhaseOnJobResultCondition.NEVER,
-                false, false, "", 0, false, false, "", false, false, new ScriptLocation
+                false, false, "", 0, false, false, "", false, false, false, new ScriptLocation
                 (null, null, null, null, null), null, null, new JSONObject(),
                 PhaseJobsConfig.ResumeCondition.SKIP, null, null, false, false,
                 false, false, false, PhaseJobsConfig.IgnoreJobResult.NEVER);
@@ -177,7 +177,7 @@ public class PhaseJobsConfigTest extends HudsonTestCase {
         MultiJobBuild mjb = createTriggeringBuild(createParametersAction(OVERRIDES_KEY_VALUES));
 
         PhaseJobsConfig pjc = new PhaseJobsConfig("dummy", "", true, null, KillPhaseOnJobResultCondition.NEVER,
-                false, false, "", 0, false, false, "", false, false, new ScriptLocation
+                false, false, "", 0, false, false, "", false, false, false, new ScriptLocation
                 (null, null, null, null, null), null, null, new JSONObject(),
                 PhaseJobsConfig.ResumeCondition.SKIP, null, null, false, false, false, false, false,
                 PhaseJobsConfig.IgnoreJobResult.NEVER);
@@ -205,7 +205,7 @@ public class PhaseJobsConfigTest extends HudsonTestCase {
         configs.add(new TestParametersConfig(OVERRIDES_KEY_VALUES));
 
         PhaseJobsConfig pjc = new PhaseJobsConfig("dummy", "", true, configs, KillPhaseOnJobResultCondition.NEVER,
-                false, false, "", 0, false, false, "", false, false, new ScriptLocation
+                false, false, "", 0, false, false, "", false, false, false, new ScriptLocation
                 (null, null, null, null, null), null, null, new JSONObject(),
                 PhaseJobsConfig.ResumeCondition.SKIP, null, null, false, false, false,
                 false, false, PhaseJobsConfig.IgnoreJobResult.NEVER);
@@ -239,7 +239,7 @@ public class PhaseJobsConfigTest extends HudsonTestCase {
         configs.add(new TestParametersConfig(CONFIG_OVERRIDES_KEY_VALUES));
 
         PhaseJobsConfig pjc = new PhaseJobsConfig("dummy", "", true, configs, KillPhaseOnJobResultCondition.NEVER,
-                false, false, "", 0, false, false, "", false, false, new ScriptLocation
+                false, false, "", 0, false, false, "", false, false, false, new ScriptLocation
                 (null, null, null, null, null), null, null, new JSONObject(),
                 PhaseJobsConfig.ResumeCondition.SKIP, null, null, false, false, false,
                 false, false, PhaseJobsConfig.IgnoreJobResult.NEVER);
@@ -272,7 +272,7 @@ public class PhaseJobsConfigTest extends HudsonTestCase {
         configs.add(new TestParametersConfig(CONFIG_OVERRIDES_KEY_VALUES));
 
         PhaseJobsConfig pjc = new PhaseJobsConfig("dummy", "", true, configs, KillPhaseOnJobResultCondition.NEVER,
-                false, false, "", 0, false, false, "", false, false, new ScriptLocation
+                false, false, "", 0, false, false, "", false, false, false, new ScriptLocation
                 (null, null, null, null, null), null, null, new JSONObject(),
                 PhaseJobsConfig.ResumeCondition.SKIP, null, null, false, false, false,
                 false, false, PhaseJobsConfig.IgnoreJobResult.NEVER);
