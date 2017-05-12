@@ -133,6 +133,7 @@ public class MultiJobBuilder extends Builder implements DependecyDeclarer {
      */
     public static final String PERSISTENT_VARS_PREFIX = "RESUMABLE_";
 
+    @DataBoundConstructor
     public MultiJobBuilder(String phaseName, List<PhaseJobsConfig> phaseJobs,
             ContinuationCondition continuationCondition, boolean enableGroovyScript, ScriptLocation scriptLocation,
                            String bindings, boolean isRunOnSlave,
