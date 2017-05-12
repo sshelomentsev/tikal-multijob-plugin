@@ -658,8 +658,9 @@ public class PhaseJobsConfig implements Describable<PhaseJobsConfig> {
                         } else {
                             params = mergeParameters(params, multiJobParametersAction);
                         }
+                    } else if (a != null) {
+                        actions.add(a);
                     }
-
                 } catch (DontTriggerException e) {
                     // don't trigger on this configuration
                     listener.getLogger().println(
