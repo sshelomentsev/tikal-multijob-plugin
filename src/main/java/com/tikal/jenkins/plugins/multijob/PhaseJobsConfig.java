@@ -59,6 +59,7 @@ public class PhaseJobsConfig implements Describable<PhaseJobsConfig> {
     private List<AbstractBuildParameters> configs;
     private KillPhaseOnJobResultCondition killPhaseOnJobResultCondition = KillPhaseOnJobResultCondition.NEVER;
     private boolean buildOnlyIfSCMChanges = false;
+    private boolean applyConditionOnlyIfNoSCMChanges = false;
     private boolean enableJobScript;
     private boolean isUseScriptFile;
     private String jobScript;
@@ -96,9 +97,17 @@ public class PhaseJobsConfig implements Describable<PhaseJobsConfig> {
         this.buildOnlyIfSCMChanges = triggerOnlyIfSCMChanges;
     }
 
-    public void setParsingRulesPath(String parsingRulesPath) {
-        this.parsingRulesPath = parsingRulesPath;
-    }
+	public boolean isApplyConditionOnlyIfNoSCMChanges() {
+		return this.applyConditionOnlyIfNoSCMChanges;
+	}
+
+	public void setApplyConditionOnlyIfNoSCMChanges(boolean applyConditionOnlyIfNoSCMChanges) {
+		this.applyConditionOnlyIfNoSCMChanges = applyConditionOnlyIfNoSCMChanges;
+	}
+
+	public void setParsingRulesPath(String parsingRulesPath) {
+		this.parsingRulesPath = parsingRulesPath;
+	}
 
     public String getParsingRulesPath() {
         return parsingRulesPath;
@@ -328,8 +337,8 @@ public class PhaseJobsConfig implements Describable<PhaseJobsConfig> {
                            boolean disableJob, boolean enableRetryStrategy,
                            String parsingRulesPath, int maxRetries, boolean enableCondition,
                            boolean abortAllJob, String condition, boolean buildOnlyIfSCMChanges,
-                           boolean enableJobScript, ScriptLocation scriptLocation,
-                           String jobBindings, String resumeBindings,
+                           boolean applyConditionOnlyIfNoSCMChanges, boolean enableJobScript,
+                           ScriptLocation scriptLocation, String jobBindings, String resumeBindings,
                            JSONObject resumeConditions,
                            ResumeCondition resumeCondition, String resumeScriptPath, String resumeScriptText,
                            boolean isUseResumeScriptFile,
@@ -352,6 +361,7 @@ public class PhaseJobsConfig implements Describable<PhaseJobsConfig> {
         this.abortAllJob = abortAllJob;
         this.condition = Util.fixNull(condition);
         this.buildOnlyIfSCMChanges = buildOnlyIfSCMChanges;
+        this.applyConditionOnlyIfNoSCMChanges = applyConditionOnlyIfNoSCMChanges;
         this.enableJobScript = enableJobScript;
         if (enableJobScript && null != scriptLocation) {
             this.jobScript = scriptLocation.getScriptText();
@@ -566,28 +576,35 @@ public class PhaseJobsConfig implements Describable<PhaseJobsConfig> {
         return new MultiJobParametersAction(params.values().toArray(new ParameterValue[params.size()]));
     }
 
-    /**
-     * Create a list of actions to pass to the triggered build of project.
-     * <p>
-     * This will create a single ParametersAction which will use the defaults
-     * from the project being triggered and override these, With the current
-     * parameters defined in this build. if configured. With any matching items
-     * defined in the different configs, e.g. predefined parameters.
-     *
-     * @param build            build that is triggering project
-     * @param listener
-     * @param project          Project that is being triggered
-     * @param isCurrentInclude Include parameters from the current build.
-     * @return
-     * @throws IOException
-     * @throws InterruptedException
-     */
-    public List<Action> getActions(AbstractBuild build, TaskListener listener,
-                                   AbstractProject project, boolean isCurrentInclude)
-            throws IOException, InterruptedException {
-        List<Action> actions = new ArrayList<Action>();
-        MultiJobParametersAction params = null;
-        LinkedList<ParameterValue> paramsValuesList = new LinkedList<ParameterValue>();
+	/**
+	 * Create a list of actions to pass to the triggered build of project.
+	 *
+	 * This will create a single ParametersAction which will use the defaults
+	 * from the project being triggered and override these, With the current
+	 * parameters defined in this build. if configured. With any matching items
+	 * defined in the different configs, e.g. predefined parameters.
+	 *
+	 * @param build
+	 *            build that is triggering project
+	 * @param listener
+	 * 			  Project's listener
+	 * @param project
+	 *            Project that is being triggered
+	 * @param isCurrentInclude
+	 *            Include parameters from the current build.
+	 * @return
+	 * 			retuen List
+	 * @throws IOException
+	 * 			throws IOException
+	 * @throws InterruptedException
+	 * 			throws InterruptedException
+	 */
+	public List<Action> getActions(AbstractBuild build, TaskListener listener,
+			AbstractProject project, boolean isCurrentInclude)
+			throws IOException, InterruptedException {
+		List<Action> actions = new ArrayList<Action>();
+		MultiJobParametersAction params = null;
+		LinkedList<ParameterValue> paramsValuesList = new LinkedList<ParameterValue>();
 
         List originalActions = project.getActions();
 
@@ -641,8 +658,9 @@ public class PhaseJobsConfig implements Describable<PhaseJobsConfig> {
                         } else {
                             params = mergeParameters(params, multiJobParametersAction);
                         }
+                    } else if (a != null) {
+                        actions.add(a);
                     }
-
                 } catch (DontTriggerException e) {
                     // don't trigger on this configuration
                     listener.getLogger().println(

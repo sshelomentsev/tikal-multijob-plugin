@@ -137,6 +137,9 @@ public class MultiView {
 		for (PhaseJobsConfig config : subProjects) {
             Result minSuccessResult = config.getIgnoreJobResult().getMinSuccessResult();
 			Item it = jenkins.getItem(config.getJobName(), project.getParent(), AbstractProject.class);
+			if (it == null) {
+				continue;
+			}
 			MultiJobBuild.SubBuild subBuild = null;
 			List<MultiJobBuild.SubBuild> subs = phaseProjects.get(it.getName());
 			int curr = 0;

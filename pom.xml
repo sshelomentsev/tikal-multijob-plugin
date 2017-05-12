@@ -9,7 +9,7 @@
         <version>2.1.0</version> <relativePath>../pom.xml</relativePath> </parent -->
 
     <artifactId>jenkins-multijob-plugin</artifactId>
-    <version>1.85.0</version>
+    <version>1.86.0</version>
     <name>Jenkins Multijob plugin</name>
     <description>Enabling full hierarchy of Jenkins jobs</description>
     <url>http://wiki.jenkins-ci.org/display/JENKINS/Multijob+Plugin</url>
@@ -53,13 +53,18 @@
             <name>Itai Or</name>
             <email>itai@tikalk.com</email>
         </developer>
+        <developer>
+            <id>cohencil</id>
+            <name>Chen Cohen</name>
+            <email>chenc@tikalk.com</email>
+        </developer>
     </developers>
 
     <scm>
         <connection>scm:git:git://github.com:xored/tikal-multijob-plugin.git</connection>
         <developerConnection>scm:git:git@github.com:xored/tikal-multijob-plugin.git</developerConnection>
         <url>https://github.com/xored/tikal-multijob-plugin.git</url>
-        <tag>v1.85.0</tag>
+        <tag>v1.86.0</tag>
     </scm>
 
 
@@ -124,8 +129,13 @@
         </dependency>
         <dependency>
             <groupId>org.jenkins-ci.plugins</groupId>
+            <artifactId>built-on-column</artifactId>
+            <version>1.1</version>
+        </dependency>
+        <dependency>
+            <groupId>org.jenkins-ci.plugins</groupId>
             <artifactId>matrix-project</artifactId>
-            <version>1.4</version>
+            <version>1.7.1</version>
             <optional>true</optional>
         </dependency>
         <dependency>
