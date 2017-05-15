@@ -1,6 +1,5 @@
 package com.tikal.jenkins.plugins.multijob.views;
 
-import com.tikal.jenkins.plugins.multijob.MultiJobBuilder;
 import hudson.model.AbstractBuild;
 import hudson.model.HealthReport;
 import hudson.model.Job;
@@ -32,6 +31,9 @@ public class MultiJobItem {
 	private String lastDuration;
 	private int healthScore;
 
+	private final String builtOnUrl;
+	private final String builtOnTitle;
+
 	public MultiJobItem(Job<?, ?> project, int buildNumber, int itemId, int parentItemId, String lastSuccess, String
 			lastFailure) {
 		this.itemId = itemId;
@@ -53,10 +55,15 @@ public class MultiJobItem {
 			this.result = build.getResult() == null ? Result.NOT_BUILT : build.getResult();
 			this.statusIconColor = build.getIconColor().getImage();
 			this.lastDuration = build.getDurationString();
+
+			this.builtOnUrl = build.getBuiltOn().getSearchUrl();
+			this.builtOnTitle = build.getBuiltOn().getDisplayName();
 		} else {
 			this.result = Result.NOT_BUILT;
 			this.statusIconColor = "nobuilt.png";
 			this.lastDuration = "N/A";
+			this.builtOnUrl = "";
+			this.builtOnTitle = "";
 		}
 		this.status = null != this.result ? this.result.toString() : "Not built yet";
 		HealthReport health = project.getBuildHealth();
@@ -89,10 +96,15 @@ public class MultiJobItem {
             this.result = minSuccessResult.isWorseOrEqualTo(buildResult) ? Result.SUCCESS : buildResult;
             this.statusIconColor = build.getIconColor().getImage();
             this.lastDuration = build.getDurationString();
+
+	        this.builtOnUrl = build.getBuiltOn().getSearchUrl();
+	        this.builtOnTitle = build.getBuiltOn().getDisplayName();
         } else {
             this.result = Result.NOT_BUILT;
             this.statusIconColor = "nobuilt.png";
             this.lastDuration = "N/A";
+	        this.builtOnUrl = "";
+	        this.builtOnTitle = "";
         }
         this.status = null != this.result ? this.result.toString() : "Not built yet";
         HealthReport health = project.getBuildHealth();
@@ -122,6 +134,8 @@ public class MultiJobItem {
 		this.lastSuccess = "";
 		this.lastFailure = "";
 		this.lastDuration = "";
+	    this.builtOnUrl = "";
+	    this.builtOnTitle = "";
 	}
 
 	public int getItemId() {
@@ -202,6 +216,14 @@ public class MultiJobItem {
 
 	public String getRun() {
 		return null;
+	}
+
+	public String getBuiltOnUrl() {
+		return builtOnUrl;
+	}
+
+	public String getBuiltOnTitle() {
+		return builtOnTitle;
 	}
 
 	@Override
