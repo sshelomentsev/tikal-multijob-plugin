@@ -50,6 +50,9 @@ div(id: "statusTable") {
                 th(class: "job-build") {
                     text("Build")
                 }
+                th(class: "built-on") {
+                    text("Built On")
+                }
                 th(class: "job-last job-last-success") {
                     text("Last Success")
                 }
@@ -93,6 +96,17 @@ div(id: "statusTable") {
                         if (v.isBuild()) {
                             a(href: "${rootURL}" + v.getBuildUrl()) {
                                 text(v.getBuildName())
+                            }
+                        } else {
+                            text("N/A")
+                        }
+                    }
+                }
+                td(class: "built-on") {
+                    if (v.isProject()) {
+                        if (v.isBuild()) {
+                            a(href: "${rootURL}/" + v.getBuiltOnUrl()) {
+                                text(v.getBuiltOnTitle())
                             }
                         } else {
                             text("N/A")
