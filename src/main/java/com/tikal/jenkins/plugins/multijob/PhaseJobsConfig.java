@@ -44,10 +44,10 @@ import java.util.Map;
 
 //import com.tikal.jenkins.plugins.multijob.scm.MultiJobScm;
 public class PhaseJobsConfig implements Describable<PhaseJobsConfig> {
-
     private String jobName;
     private String jobProperties;
     private boolean currParams;
+    private boolean aggregatedTestResults;
     private boolean exposedSCM;
     private boolean disableJob;
     private String parsingRulesPath;
@@ -97,17 +97,17 @@ public class PhaseJobsConfig implements Describable<PhaseJobsConfig> {
         this.buildOnlyIfSCMChanges = triggerOnlyIfSCMChanges;
     }
 
-	public boolean isApplyConditionOnlyIfNoSCMChanges() {
-		return this.applyConditionOnlyIfNoSCMChanges;
-	}
+    public boolean isApplyConditionOnlyIfNoSCMChanges() {
+        return this.applyConditionOnlyIfNoSCMChanges;
+    }
 
-	public void setApplyConditionOnlyIfNoSCMChanges(boolean applyConditionOnlyIfNoSCMChanges) {
-		this.applyConditionOnlyIfNoSCMChanges = applyConditionOnlyIfNoSCMChanges;
-	}
+    public void setApplyConditionOnlyIfNoSCMChanges(boolean applyConditionOnlyIfNoSCMChanges) {
+        this.applyConditionOnlyIfNoSCMChanges = applyConditionOnlyIfNoSCMChanges;
+    }
 
-	public void setParsingRulesPath(String parsingRulesPath) {
-		this.parsingRulesPath = parsingRulesPath;
-	}
+    public void setParsingRulesPath(String parsingRulesPath) {
+        this.parsingRulesPath = parsingRulesPath;
+    }
 
     public String getParsingRulesPath() {
         return parsingRulesPath;
@@ -190,6 +190,14 @@ public class PhaseJobsConfig implements Describable<PhaseJobsConfig> {
         return jobProperties;
     }
 
+    public boolean isAggregatedTestResults() {
+        return aggregatedTestResults;
+    }
+
+    public void setAggregatedTestResults(boolean aggregatedTestResults) {
+        this.aggregatedTestResults = aggregatedTestResults;
+    }
+
     public void setJobProperties(String jobProperties) {
         this.jobProperties = jobProperties;
     }
@@ -214,12 +222,186 @@ public class PhaseJobsConfig implements Describable<PhaseJobsConfig> {
         return jobScript;
     }
 
+    public PhaseJobsConfig(String jobName, String jobProperties,
+            boolean currParams, List<AbstractBuildParameters> configs,
+            KillPhaseOnJobResultCondition killPhaseOnJobResultCondition,
+            boolean disableJob, boolean enableRetryStrategy,
+            String parsingRulesPath, int maxRetries, boolean enableCondition,
+            boolean abortAllJob, String condition, boolean buildOnlyIfSCMChanges,
+                        boolean applyConditionOnlyIfNoSCMChanges) {
+        this(jobName, jobProperties, currParams, configs, killPhaseOnJobResultCondition,
+             disableJob, enableRetryStrategy, parsingRulesPath, maxRetries, enableCondition,
+             abortAllJob, condition, buildOnlyIfSCMChanges, applyConditionOnlyIfNoSCMChanges, false);
+    }
+
+    @DataBoundConstructor
+    public PhaseJobsConfig(String jobName, String jobProperties,
+            boolean currParams, List<AbstractBuildParameters> configs,
+            KillPhaseOnJobResultCondition killPhaseOnJobResultCondition,
+            boolean disableJob, boolean enableRetryStrategy,
+            String parsingRulesPath, int maxRetries, boolean enableCondition,
+            boolean abortAllJob, String condition, boolean buildOnlyIfSCMChanges,
+            boolean applyConditionOnlyIfNoSCMChanges, boolean aggregatedTestResults) {
+        this.jobName = jobName;
+        this.jobProperties = jobProperties;
+        this.currParams = currParams;
+        this.killPhaseOnJobResultCondition = killPhaseOnJobResultCondition;
+        this.disableJob = disableJob;
+        this.configs = Util.fixNull(configs);
+        this.enableRetryStrategy = enableRetryStrategy;
+        this.maxRetries = maxRetries;
+        if (this.maxRetries < 0) {
+            this.maxRetries = 0;
+        }
+        this.parsingRulesPath = Util.fixNull(parsingRulesPath);
+        this.enableCondition = enableCondition;
+        this.abortAllJob = abortAllJob;
+        this.condition = Util.fixNull(condition);
+        this.buildOnlyIfSCMChanges = buildOnlyIfSCMChanges;
+        this.applyConditionOnlyIfNoSCMChanges = applyConditionOnlyIfNoSCMChanges;
+        this.aggregatedTestResults = aggregatedTestResults;
+    }
+
     public void setJobScript(String jobScript) {
         this.jobScript = jobScript;
     }
 
     public boolean isUseScriptFile() {
         return isUseScriptFile;
+    }
+
+    @Extension(optional = true)
+    public static class DescriptorImpl extends Descriptor<PhaseJobsConfig> {
+        private ParserRuleFile[] parsingRulesGlobal = new ParserRuleFile[0];
+
+        public DescriptorImpl() {
+            load();
+        }
+
+        @Override
+        public String getDisplayName() {
+            return "Phase Jobs Config";
+        }
+
+        public List<Descriptor<AbstractBuildParameters>> getBuilderConfigDescriptors() {
+            return Hudson
+                    .getInstance()
+                    .<AbstractBuildParameters, Descriptor<AbstractBuildParameters>> getDescriptorList(
+                            AbstractBuildParameters.class);
+        }
+
+        public AutoCompletionCandidates doAutoCompleteJobName(
+                @QueryParameter String value) {
+            AutoCompletionCandidates c = new AutoCompletionCandidates();
+            for (String localJobName : Hudson.getInstance().getJobNames()) {
+                if (localJobName.toLowerCase().startsWith(value.toLowerCase()))
+                    c.add(localJobName);
+            }
+            return c;
+        }
+
+        private void savePhaseJobConfigParameters(String localJobName) {
+            AbstractProject project = ((AbstractProject) Jenkins.getInstance()
+                    .getItemByFullName(localJobName));
+            List<ParameterDefinition> parameterDefinitions = getParameterDefinition(project);
+            StringBuilder sb = new StringBuilder();
+            // ArrayList<ModuleLocation> scmLocation = null;
+            for (ParameterDefinition pdef : parameterDefinitions) {
+                String paramValue = null;
+                if (pdef instanceof StringParameterDefinition) {
+                    StringParameterDefinition stringParameterDefinition = (StringParameterDefinition) pdef;
+                    paramValue = (String) stringParameterDefinition
+                            .getDefaultParameterValue().getValue();
+                } else if (pdef instanceof BooleanParameterDefinition) {
+                    BooleanParameterDefinition booleanParameterDefinition = (BooleanParameterDefinition) pdef;
+                    paramValue = String.valueOf(booleanParameterDefinition
+                            .getDefaultParameterValue().getValue());
+                }
+                sb.append(pdef.getName()).append("=").append(paramValue)
+                        .append("\n");
+            }
+
+            AbstractProject item = getCurrentJob();
+            if (item instanceof MultiJobProject) {
+                MultiJobProject parentProject = (MultiJobProject) item;
+                List<Builder> builders = parentProject.getBuilders();
+                if (builders != null) {
+                    for (Builder builder : builders) {
+                        if (builder instanceof MultiJobBuilder) {
+                            MultiJobBuilder multiJobBuilder = (MultiJobBuilder) builder;
+                            List<PhaseJobsConfig> phaseJobs = multiJobBuilder
+                                    .getPhaseJobs();
+                            for (PhaseJobsConfig phaseJob : phaseJobs) {
+                                if (phaseJob.getJobName().equals(localJobName)) {
+                                    phaseJob.setJobProperties(sb.toString());
+                                    save();
+                                }
+                            }
+                        }
+                    }
+
+                }
+            }
+        }
+
+        private static String getCurrentJobName() {
+            String path = Descriptor.getCurrentDescriptorByNameUrl();
+            String[] parts = path.split("/");
+            StringBuilder builder = new StringBuilder();
+            for (int i = 2; i < parts.length; i += 2) {
+                if (i > 2)
+                    builder.append('/');
+                builder.append(parts[i]);
+            }
+            return builder.toString();
+        }
+
+        private static AbstractProject getCurrentJob() {
+            String jobName = getCurrentJobName();
+            return (AbstractProject) Jenkins.getInstance().getItemByFullName(
+                    jobName);
+        }
+
+        public List<ParameterDefinition> getParameterDefinition(
+                AbstractProject project) {
+            List<ParameterDefinition> list = new ArrayList<ParameterDefinition>();
+            Map<JobPropertyDescriptor, JobProperty> map = project
+                    .getProperties();
+            for (Map.Entry<JobPropertyDescriptor, JobProperty> entry : map
+                    .entrySet()) {
+                JobProperty property = entry.getValue();
+                if (property instanceof ParametersDefinitionProperty) {
+                    ParametersDefinitionProperty pdp = (ParametersDefinitionProperty) property;
+                    for (ParameterDefinition parameterDefinition : pdp
+                            .getParameterDefinitions()) {
+                        if (parameterDefinition instanceof StringParameterDefinition
+                                || parameterDefinition instanceof BooleanParameterDefinition
+                                || parameterDefinition instanceof ChoiceParameterDefinition) {
+                            list.add(parameterDefinition);
+                        }
+                    }
+                }
+            }
+            return list;
+        }
+
+        public String doFillJobProperties(@QueryParameter String jobName) {
+
+            return "fill=in";
+        }
+
+        public ParserRuleFile[] getParsingRulesGlobal() {
+            return parsingRulesGlobal;
+        }
+
+        @Override
+        public boolean configure(final StaplerRequest req, final JSONObject json)
+                throws FormException {
+            parsingRulesGlobal = req.bindParametersToList(ParserRuleFile.class,
+                    "jenkins-multijob-plugin.").toArray(new ParserRuleFile[0]);
+            save();
+            return true;
+        }
     }
 
     public void setUseScriptFile(boolean isUseScriptFile) {
@@ -409,141 +591,6 @@ public class PhaseJobsConfig implements Describable<PhaseJobsConfig> {
         return configs;
     }
 
-    @Extension(optional = true)
-    public static class DescriptorImpl extends Descriptor<PhaseJobsConfig> {
-        private ParserRuleFile[] parsingRulesGlobal = new ParserRuleFile[0];
-
-        public DescriptorImpl() {
-            load();
-        }
-
-        @Override
-        public String getDisplayName() {
-            return "Phase Jobs Config";
-        }
-
-        public List<Descriptor<AbstractBuildParameters>> getBuilderConfigDescriptors() {
-            return Hudson
-                    .getInstance()
-                    .<AbstractBuildParameters, Descriptor<AbstractBuildParameters>>getDescriptorList(
-                            AbstractBuildParameters.class);
-        }
-
-        public AutoCompletionCandidates doAutoCompleteJobName(
-                @QueryParameter String value) {
-            AutoCompletionCandidates c = new AutoCompletionCandidates();
-            for (String localJobName : Hudson.getInstance().getJobNames()) {
-                if (localJobName.toLowerCase().startsWith(value.toLowerCase()))
-                    c.add(localJobName);
-            }
-            return c;
-        }
-
-        private void savePhaseJobConfigParameters(String localJobName) {
-            AbstractProject project = ((AbstractProject) Jenkins.getInstance()
-                    .getItemByFullName(localJobName));
-            List<ParameterDefinition> parameterDefinitions = getParameterDefinition(project);
-            StringBuilder sb = new StringBuilder();
-            // ArrayList<ModuleLocation> scmLocation = null;
-            for (ParameterDefinition pdef : parameterDefinitions) {
-                String paramValue = null;
-                if (pdef instanceof StringParameterDefinition) {
-                    StringParameterDefinition stringParameterDefinition = (StringParameterDefinition) pdef;
-                    paramValue = stringParameterDefinition
-                            .getDefaultParameterValue().value;
-                } else if (pdef instanceof BooleanParameterDefinition) {
-                    BooleanParameterDefinition booleanParameterDefinition = (BooleanParameterDefinition) pdef;
-                    paramValue = String.valueOf(booleanParameterDefinition
-                            .getDefaultParameterValue().value);
-                }
-                sb.append(pdef.getName()).append("=").append(paramValue)
-                        .append("\n");
-            }
-
-            AbstractProject item = getCurrentJob();
-            if (item instanceof MultiJobProject) {
-                MultiJobProject parentProject = (MultiJobProject) item;
-                List<Builder> builders = parentProject.getBuilders();
-                if (builders != null) {
-                    for (Builder builder : builders) {
-                        if (builder instanceof MultiJobBuilder) {
-                            MultiJobBuilder multiJobBuilder = (MultiJobBuilder) builder;
-                            List<PhaseJobsConfig> phaseJobs = multiJobBuilder
-                                    .getPhaseJobs();
-                            for (PhaseJobsConfig phaseJob : phaseJobs) {
-                                if (phaseJob.getJobName().equals(localJobName)) {
-                                    phaseJob.setJobProperties(sb.toString());
-                                    save();
-                                }
-                            }
-                        }
-                    }
-
-                }
-            }
-        }
-
-        private static String getCurrentJobName() {
-            String path = Descriptor.getCurrentDescriptorByNameUrl();
-            String[] parts = path.split("/");
-            StringBuilder builder = new StringBuilder();
-            for (int i = 2; i < parts.length; i += 2) {
-                if (i > 2)
-                    builder.append('/');
-                builder.append(parts[i]);
-            }
-            return builder.toString();
-        }
-
-        private static AbstractProject getCurrentJob() {
-            String jobName = getCurrentJobName();
-            return (AbstractProject) Jenkins.getInstance().getItemByFullName(
-                    jobName);
-        }
-
-        public List<ParameterDefinition> getParameterDefinition(
-                AbstractProject project) {
-            List<ParameterDefinition> list = new ArrayList<ParameterDefinition>();
-            Map<JobPropertyDescriptor, JobProperty> map = project
-                    .getProperties();
-            for (Map.Entry<JobPropertyDescriptor, JobProperty> entry : map
-                    .entrySet()) {
-                JobProperty property = entry.getValue();
-                if (property instanceof ParametersDefinitionProperty) {
-                    ParametersDefinitionProperty pdp = (ParametersDefinitionProperty) property;
-                    for (ParameterDefinition parameterDefinition : pdp
-                            .getParameterDefinitions()) {
-                        if (parameterDefinition instanceof StringParameterDefinition
-                                || parameterDefinition instanceof BooleanParameterDefinition
-                                || parameterDefinition instanceof ChoiceParameterDefinition) {
-                            list.add(parameterDefinition);
-                        }
-                    }
-                }
-            }
-            return list;
-        }
-
-        public String doFillJobProperties(@QueryParameter String jobName) {
-
-            return "fill=in";
-        }
-
-        public ParserRuleFile[] getParsingRulesGlobal() {
-            return parsingRulesGlobal;
-        }
-
-        @Override
-        public boolean configure(final StaplerRequest req, final JSONObject json)
-                throws FormException {
-            parsingRulesGlobal = req.bindParametersToList(ParserRuleFile.class,
-                    "jenkins-multijob-plugin.").toArray(new ParserRuleFile[0]);
-            save();
-            return true;
-        }
-
-    }
-
     public List<ParameterValue> getJobParameters(AbstractBuild<?, ?> build,
                                                  TaskListener listener) {
         ParametersAction action = build.getAction(ParametersAction.class);
@@ -576,35 +623,35 @@ public class PhaseJobsConfig implements Describable<PhaseJobsConfig> {
         return new MultiJobParametersAction(params.values().toArray(new ParameterValue[params.size()]));
     }
 
-	/**
-	 * Create a list of actions to pass to the triggered build of project.
-	 *
-	 * This will create a single ParametersAction which will use the defaults
-	 * from the project being triggered and override these, With the current
-	 * parameters defined in this build. if configured. With any matching items
-	 * defined in the different configs, e.g. predefined parameters.
-	 *
-	 * @param build
-	 *            build that is triggering project
-	 * @param listener
-	 * 			  Project's listener
-	 * @param project
-	 *            Project that is being triggered
-	 * @param isCurrentInclude
-	 *            Include parameters from the current build.
-	 * @return
-	 * 			retuen List
-	 * @throws IOException
-	 * 			throws IOException
-	 * @throws InterruptedException
-	 * 			throws InterruptedException
-	 */
-	public List<Action> getActions(AbstractBuild build, TaskListener listener,
-			AbstractProject project, boolean isCurrentInclude)
-			throws IOException, InterruptedException {
-		List<Action> actions = new ArrayList<Action>();
-		MultiJobParametersAction params = null;
-		LinkedList<ParameterValue> paramsValuesList = new LinkedList<ParameterValue>();
+    /**
+     * Create a list of actions to pass to the triggered build of project.
+     *
+     * This will create a single ParametersAction which will use the defaults
+     * from the project being triggered and override these, With the current
+     * parameters defined in this build. if configured. With any matching items
+     * defined in the different configs, e.g. predefined parameters.
+     *
+     * @param build
+     *            build that is triggering project
+     * @param listener
+     *               Project's listener
+     * @param project
+     *            Project that is being triggered
+     * @param isCurrentInclude
+     *            Include parameters from the current build.
+     * @return
+     *             retuen List
+     * @throws IOException
+     *             throws IOException
+     * @throws InterruptedException
+     *             throws InterruptedException
+     */
+    public List<Action> getActions(AbstractBuild build, TaskListener listener,
+            AbstractProject project, boolean isCurrentInclude)
+            throws IOException, InterruptedException {
+        List<Action> actions = new ArrayList<Action>();
+        MultiJobParametersAction params = null;
+        LinkedList<ParameterValue> paramsValuesList = new LinkedList<ParameterValue>();
 
         List originalActions = project.getActions();
 

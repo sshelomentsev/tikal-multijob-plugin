@@ -42,7 +42,15 @@ import hudson.tasks.Builder;
 import hudson.util.StreamCopyThread;
 import jenkins.model.Jenkins;
 import net.sf.json.JSONObject;
+import jenkins.model.Jenkins;
+
+import java.io.BufferedReader;
+import java.io.File;
+import java.io.FileReader;
+import java.io.FileNotFoundException;
+
 import org.apache.commons.lang.StringUtils;
+import org.jenkinsci.lib.envinject.EnvInjectException;
 import org.jenkinsci.lib.envinject.EnvInjectLogger;
 import org.jenkinsci.plugins.envinject.EnvInjectBuilder;
 import org.jenkinsci.plugins.envinject.EnvInjectBuilderContributionAction;
@@ -82,6 +90,13 @@ import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
 import java.util.regex.Pattern;
+
+import org.jenkinsci.plugins.tokenmacro.TokenMacro;
+
+import groovy.util.*;
+import hudson.plugins.parameterizedtrigger.AbstractBuildParameters.DontTriggerException;
+import java.util.concurrent.CancellationException;
+import jenkins.model.CauseOfInterruption;
 
 public class MultiJobBuilder extends Builder implements DependecyDeclarer {
     /**
@@ -363,13 +378,20 @@ public class MultiJobBuilder extends Builder implements DependecyDeclarer {
         Jenkins jenkins = Jenkins.getInstance();
         Map<PhaseSubJob, PhaseJobsConfig> phaseSubJobs = new LinkedHashMap<PhaseSubJob, PhaseJobsConfig>();
         final CounterManager phaseCounters = new CounterManager();
-
+        boolean aggragatedTestResults = false;
         for (PhaseJobsConfig phaseJobConfig : phaseJobs) {
             Item item = jenkins.getItem(phaseJobConfig.getJobName(), multiJobBuild.getParent(), AbstractProject.class);
             if (item instanceof AbstractProject) {
                 AbstractProject job = (AbstractProject) item;
                 phaseSubJobs.put(new PhaseSubJob(job), phaseJobConfig);
             }
+            if (phaseJobConfig.isAggregatedTestResults()) {
+                aggragatedTestResults = true;
+            }
+        }
+        
+        if (aggragatedTestResults) {
+            multiJobBuild.addTestsResult();
         }
 
         List<SubTask> subTasks = new ArrayList<SubTask>();
@@ -782,6 +804,10 @@ public class MultiJobBuilder extends Builder implements DependecyDeclarer {
                         addBuildEnvironmentVariables(subTask.multiJobBuild, jobBuild, listener);
                         subTask.result = result;
                     }
+                }
+
+                if (subTask.phaseConfig.isAggregatedTestResults()) {
+                    MultiJobTestAggregator.aggregateResultsFromBuild(jobBuild, subTask.multiJobBuild.getMultiJobTestResults(), listener);
                 }
             } catch (Exception e) {
                 if (e instanceof InterruptedException) {

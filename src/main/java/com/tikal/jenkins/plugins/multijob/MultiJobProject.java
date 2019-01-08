@@ -2,6 +2,7 @@ package com.tikal.jenkins.plugins.multijob;
 
 import com.tikal.jenkins.plugins.multijob.views.MultiJobItem;
 import com.tikal.jenkins.plugins.multijob.views.MultiView;
+ import hudson.model.Cause;
 import hudson.Extension;
 import hudson.model.AbstractProject;
 import hudson.model.DependencyGraph;
@@ -200,4 +201,23 @@ public class MultiJobProject extends Project<MultiJobProject, MultiJobBuild>
             }
         }
     }
+
+    // TODO as in https://github.com/jenkinsci/maven-plugin/pull/109:
+    @Override
+    public boolean scheduleBuild(Cause c) {
+        return super.scheduleBuild(c);
+    }
+    @Override
+    public boolean scheduleBuild(int quietPeriod, Cause c) {
+        return super.scheduleBuild(quietPeriod, c);
+    }
+    @Override
+    public boolean scheduleBuild(int quietPeriod) {
+        return super.scheduleBuild(quietPeriod);
+    }
+    @Override
+    public boolean scheduleBuild() {
+        return super.scheduleBuild();
+    }
+
 }

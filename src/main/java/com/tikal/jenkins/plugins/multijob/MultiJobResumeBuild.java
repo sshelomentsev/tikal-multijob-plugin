@@ -1,18 +1,16 @@
 package com.tikal.jenkins.plugins.multijob;
 
-import hudson.model.Action;
-import hudson.model.CauseAction;
-import hudson.model.Queue;
-import hudson.model.Run;
+import hudson.model.*;
 import jenkins.model.Jenkins;
 import jenkins.model.RunAction2;
+import org.kohsuke.stapler.StaplerProxy;
 import org.kohsuke.stapler.StaplerRequest;
 import org.kohsuke.stapler.StaplerResponse;
 
 import java.io.IOException;
 import java.util.List;
 
-public class MultiJobResumeBuild implements RunAction2 {
+public class MultiJobResumeBuild implements RunAction2, StaplerProxy {
 
     private transient Run<?, ?> run;
 
@@ -21,7 +19,7 @@ public class MultiJobResumeBuild implements RunAction2 {
     }
 
     public String getIconFileName() {
-		return "plugin/jenkins-multijob-plugin/tool32.png";
+        return Jenkins.getInstance().hasPermission(Job.BUILD) ? "plugin/jenkins-multijob-plugin/tool32.png" : null;
 	}
 
     public String getDisplayName() {
@@ -60,5 +58,27 @@ public class MultiJobResumeBuild implements RunAction2 {
         this.run = run;
     }
 
+    private List<Action> copyBuildCauses() {
+        List<Action> actions = new ArrayList<Action>();
+        boolean hasUserIdCause = false;
+        for (Object cause : run.getCauses()) {
+            if (cause instanceof Cause.UserIdCause) {
+                hasUserIdCause = true;
+                actions.add(new CauseAction(new Cause.UserIdCause()));
+            } else {
+                actions.add(new CauseAction((Cause) cause));
+            }
+        }
+        if (!hasUserIdCause) {
+            actions.add(new CauseAction(new Cause.UserIdCause()));
+        }
+        actions.addAll(run.getActions(ParametersAction.class));
+        return actions;
+    }
 
+    @Override
+    public Object getTarget() {
+        Jenkins.getInstance().checkPermission(Job.BUILD);
+        return this;
+    }
 }

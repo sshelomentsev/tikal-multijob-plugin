@@ -4,6 +4,7 @@
         <groupId>org.jenkins-ci.plugins</groupId>
         <artifactId>plugin</artifactId>
         <version>2.11</version>
+        <relativePath />
     </parent>
     <!-- parent> <groupId>org.jvnet.hudson.plugins</groupId> <artifactId>hudson-plugin-parent</artifactId>
         <version>2.1.0</version> <relativePath>../pom.xml</relativePath> </parent -->
